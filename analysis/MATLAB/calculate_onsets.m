@@ -3,8 +3,8 @@ function calculate_onsets(ID_list)
 % Usage: calculate_onsets({'firstID','secondID','otherID'})
 %
 for ID = ID_list
-    logfile=strcat('/home/chymera/data/faceOM/fmri/logfiles/faceOM/',ID,'-faceOM.log'); %general expression for input (so-called log) files.
-    outfile = strcat('/home/chymera/data/faceOM/fmri/',ID,'/onsets/',ID,'-faceOM_onset.mat'); %general expression for your output. Make sure the directories are created
+    logfile=strcat('/home/klips/Documents/Eye_Tracking/logfiles/',ID,'-faceOM.log'); %general expression for input (so-called log) files.
+    outfile = strcat('/home/klips/Documents/Eye_Tracking/first_level/',ID,'/onsets/',ID,'-faceOM_onset.mat'); %general expression for your output. Make sure the directories are created
     
     TR=2; %full volume acquisition time in seconds
     
@@ -35,7 +35,7 @@ for ID = ID_list
     for i = 1:length(Trial)
         if strcmp(Event_Type{i},'Pulse')
             pulse_count=pulse_count+1;
-            if pulse_count == 4
+            if pulse_count == 1
                 start_time=str2num(Time{i})
             end;
         end;
@@ -73,7 +73,7 @@ for ID = ID_list
     onset_cell10=(onset_cell10-start_time)/10000/TR;
     %END SUBTRACTING START TIME AND CONVERTING TO [ms]
     
-    durations={[0],[0],[0],[0]};
+    durations={[2],[2],[2],[2],[2],[2]}; % 4S, 2 tr DURATION FOR TASKS
     onsets={onset_em100_HA,onset_em100_FE,onset_em40_HA,onset_em40_FE,onset_cell22,onset_cell10};
     names={'em100_HA','em100_FE','em40_HA','em40_FE','cell_22','cell_10'};
     
