@@ -2,7 +2,62 @@
 __author__ = 'Horea Christian'
 
 
-def get_and_filter_results(experiment=False, source=False, prepixelation='not specified', remove='', mismeasurement='remove', apply_correct_values=False, make_COI=False):
+def get_et_data(source=False):
+	from os import path
+	import sys
+	import pandas as pd
+	import numpy as np
+	import math
+	from chr_helpers import get_config_file
+	
+	config = get_config_file(localpath=path.dirname(path.realpath(__file__))+'/')
+	
+	#IMPORT VARIABLES
+	if not source:
+		source = config.get('Source', 'source')
+	data_path = config.get('Addresses', source)
+	#END IMPORT VARIABLES
+	
+	if source == 'local':
+		from os import listdir
+		data_path = path.expanduser(data_path)
+		pre_fileslist = listdir(data_path)
+		
+	print('Loading data from '+data_path)
+	if pre_fileslist == []:
+		raise InputError('For some reason the list of results files could not be populated.')
+
+	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
+	
+	data_all = pd.DataFrame([]) # empty container frame for concatenating input from multiple files
+	for lefile in ['ET002_face_OM Samples.txt', 'ET004_face_OM Samples.txt']:
+		print lefile
+		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
+		data_lefile = data_lefile.reset_index()
+		data_lefile['ID']=lefile.split('_')[0]
+		data_lefile = data_lefile.set_index(['ID'], append=True, drop=True)
+		data_lefile = data_lefile.reorder_levels([1,0])
+		#REMOVE NON-INFORMATIVE (ALWAYS NULL) COLUMNS
+		data_lefile = data_lefile.drop('L Mapped Diameter [mm]', axis=1)
+		data_lefile = data_lefile.drop('Aux1', axis=1)
+		data_lefile = data_lefile.drop('Frame', axis=1)
+		data_lefile = data_lefile.drop('Pupil Confidence', axis=1)
+		data_lefile = data_lefile.drop('R Validity', axis=1)
+		#END REMOVE NON-INFORMATIVE (ALWAYS NULL) COLUMNS
+		print data_lefile.ix[:10]
+		#~ print data_lefile[(data_lefile['Type'] == 'MSG')][['Trial','L Raw X [px]']]
+		
+		
+		
+		
+		
+		#~ data_all = pd.concat([data_all, data_lefile], ignore_index=True)
+		#~ ID = lefile.split('_')[0]
+		#~ multindex = [np.array(ID*len(data_lefile)),np.array(np.arange())]
+		#~ data_lefile.reindex(
+	
+
+def get_and_filter_results(experiment=False, source=False, remove='', mismeasurement='remove', apply_correct_values=False, make_COI=False):
 	import pandas as pd
 	from os import path
 	import sys
@@ -10,19 +65,7 @@ def get_and_filter_results(experiment=False, source=False, prepixelation='not sp
 
 	config = get_config_file(localpath=path.dirname(path.realpath(__file__))+'/')
 	
-	if isinstance(prepixelation, (int, long)):
-		print prepixelation
-	
-	#IMPORT VARIABLES
-	if prepixelation == 'not specified': #is not triggers if the value is defined as 0 .
-		prepixelation = config.getint('Data', 'prepixelation')
-	if not experiment:
-		experiment = config.get('Data', 'experiment')
-	if not source:
-		source = config.get('Source', 'source')
-	data_path = config.get('Addresses', source)
-	ignore_filename = config.get('Data', 'ignore_filename')
-	#END IMPORT VARIABLES
+
 	
 	if source == 'server':
 		from HTMLParser import HTMLParser
@@ -98,10 +141,6 @@ def categories_of_interest(data_frame, scrambling_list):
 	# END DEFINE CATEGORIES OF INTEREST (COI)
 	return data_frame
 
-def correct_values(data):
-	data.ix[(data['scrambling'] != 0), 'intensity'] = 100
-	return data
-	
 if __name__ == '__main__':
-	main()
-	show()
+	get_et_data()
+	#~ show()
