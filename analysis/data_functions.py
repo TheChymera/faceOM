@@ -15,13 +15,14 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 	if not source:
 		source = config.get('Source', 'source')
 	data_path = config.get('Addresses', source)
+	eye_tracking = config.get('Data', 'eye_tracking')
 	preprocessed_path = config.get('Data', 'df_dir')
 	#END IMPORT VARIABLES
 	
 	
 	if source == 'local':
 		from os import listdir
-		data_path = path.expanduser(data_path)
+		data_path = path.expanduser(data_path+eye_tracking)
 		pre_fileslist = listdir(data_path)
 		if savefile:
 			preprocessed_file = path.expanduser(data_path+preprocessed_path+savefile)
@@ -37,7 +38,6 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 		raise InputError('For some reason the list of results files could not be populated.')
 
 	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
-	#~ files = files[3:4]
 	
 	data_all = [] # empty container list for listing per-file dataframes
 	for lefile in files:
@@ -82,7 +82,6 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 		data_lefile.set_index(['Trial', 'measurement'], inplace=True)
 		#~ #MAKE MULTIINDEX
 		#~ print data_lefile.xs(320, level=1)
-		#~ print data_lefile.columns.tolist()
 		
 		if make == 'timecourse':
 			groups_all = []
@@ -99,7 +98,6 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 			data_lefile = pd.concat(groups_all)
 		elif isinstance(make, int):
 			data_lefile = data_lefile.reset_index()
-			#~ print data_lefile.columns.tolist()
 			avg = data_lefile.groupby("Trial")['L Dia X [px]'].agg({0: lambda x: x.head((len(x)+1)//make).mean(), 
                                        1: lambda x: x.tail((len(x)+1)//make).mean()}) 
 			result = pd.melt(avg.reset_index(), "Trial", var_name="measurement", value_name="L Dia X [px]")
@@ -123,21 +121,59 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 	
 	return data_all
 
-def make_categories_of_interest(data_frame, scrambling_list):
-	# DEFINE CATEGORIES OF INTEREST (COI)
-	data_frame['COI']='' 
-	data_frame.ix[(data_frame['scrambling'] == 0) & (data_frame['intensity'] == 100), 'COI'] = 'em-easy'
-	data_frame.ix[(data_frame['scrambling'] == 0) & (data_frame['intensity'] == 40), 'COI'] = 'em-hard'
-	for i in scrambling_list:
-		if i != 0: #don't overwrite emotion tags
-			data_frame.ix[(data_frame['scrambling'] == i), 'COI'] = 'sc-' + str(i)
-			data_frame.ix[(data_frame['scrambling'] == i), 'COI'] = 'sc-' + str(i)
-			data_frame.ix[(data_frame['scrambling'] == i), 'COI'] = 'sc-' + str(i)
-			data_frame.ix[(data_frame['scrambling'] == i), 'COI'] = 'sc-' + str(i)
-			data_frame.ix[(data_frame['scrambling'] == i), 'COI'] = 'sc-' + str(i)
-	# END DEFINE CATEGORIES OF INTEREST (COI)
-	return data_frame
+def sequence_check(source=False):
+	from os import path
+	import sys
+	import pandas as pd
+	import numpy as np
+	import math
+	from chr_helpers import get_config_file
+	
+	config = get_config_file(localpath=path.dirname(path.realpath(__file__))+'/')
+	
+	#IMPORT VARIABLES
+	if not source:
+		source = config.get('Source', 'source')
+	data_path = config.get('Addresses', source)
+	eye_tracking = config.get('Data', 'eye_tracking')
+	fmri_logfile = config.get('Data', 'fmri_logfile')
+	preprocessed_path = config.get('Data', 'df_dir')
+	#END IMPORT VARIABLES
+	
+	if source == 'local':
+		from os import listdir
+		eye_tracking = path.expanduser(data_path+eye_tracking)
+		fmri_logfile = path.expanduser(data_path+fmri_logfile)
+		eye_pre_fileslist = listdir(eye_tracking)
+		fmri_pre_fileslist = listdir(fmri_logfile)
+	
+	et_files = sorted([lefile for lefile in eye_pre_fileslist if lefile.endswith('.txt')])[:9]
+	fmri_files = sorted([lefile for lefile in fmri_pre_fileslist if lefile.endswith('OM.log') and not lefile.startswith('KP') and not lefile.startswith('ET_')])[:9]
+	files = np.array([[a for a in et_files],[b for b in fmri_files]]).T
+	
+	for et, fmri in files:
+		et_file = pd.DataFrame.from_csv(eye_tracking+et, header=42, sep='\t').reset_index()
+		
+		# CUTOFF PREVIOUS EXPERIMENTS
+		cutoff = et_file[(et_file['L Raw X [px]'] == '# Message: pulse_start')].index.tolist()
+		cutoff = int(cutoff[-1])
+		et_file = et_file[cutoff:]
+		# END CUTOFF PREVIOUS EXPERIMENTS
+
+		et_file = et_file[(et_file['Type']=='MSG')].reset_index()
+		et_file = et_file[['L Raw X [px]']].ix[1:].reset_index() #eliminate first row ("pulse_start")
+		fmri_file = pd.DataFrame.from_csv(fmri_logfile+fmri, header=3, sep='\t').reset_index()
+		fmri_file = fmri_file[(fmri_file['Event Type']=='Picture')].reset_index()
+		fmri_file = fmri_file[['Code']]
+		seq_file = pd.concat([et_file, fmri_file], axis=1).drop(['index'],1) # drop old index
+		seq_file.columns = ['ET', 'fMRI']
+		
+		seq_file.to_csv(fmri_logfile+"/sequence-check/seq-chk_"+fmri)
+		
+		#~ for i in np.arange(len(seq_file)):
+			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
+				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
 
 if __name__ == '__main__':
-	get_et_data()
+	sequence_check()
 	#~ show()
