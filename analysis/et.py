@@ -6,6 +6,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 from pylab import figure, show, errorbar, setp, legend
+from matplotlib.font_manager import FontProperties
 
 categories = [
 	['difficulty', 'easy', 'em100|cell22rand'],
@@ -17,13 +18,13 @@ categories = [
 	]
 
 def main(source=False, make_tight=True):
-    timecourse = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=True)
+    timecourse = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     #~ print timecourse.index.tolist()
 
 
     timecourse_means = timecourse.groupby(level=(1,2)).mean()
     
-    timecourse_fix_mean = (timecourse_means.ix["fix"]["L Dia Y [px]"].mean()+timecourse_means.ix["fix"]["L Dia Y [px]"].mean())/2
+    timecourse_fix_mean = (timecourse_means.ix["fix"]["L Dia Y [px]"].mean()+timecourse_means.ix["fix"]["L Dia Y [px]"].mean())
     #~ normalize = lambda x: (x / timecourse_fix_mean)
     
     #~ timecourse_means = timecourse_means.groupby(level=0).transform(normalize)
@@ -33,6 +34,8 @@ def main(source=False, make_tight=True):
     #~ print timecourse_sems.ix['easy'].ix[:10] 
     
     fig = figure(figsize=(4, 3), dpi=300,facecolor='#eeeeee', tight_layout=make_tight)
+    
+    
     ax1=fig.add_subplot(2,2,1)
     ax2=fig.add_subplot(2,2,2)
     ax3=fig.add_subplot(2,2,3)
@@ -42,13 +45,16 @@ def main(source=False, make_tight=True):
     
     #~ plt.plot(np.array(timecourse_means.ix["easy"]["Time"])/1000, np.array(timecourse_means.ix["easy"]["L Dia X [px]"]), color='m')
     #~ plt.plot(np.array(timecourse_means.ix["easy"]["Time"])/1000, np.array(timecourse_means.ix["easy"]["L Dia Y [px]"]), color='g')
-    ax1.plot(np.array(timecourse_means.ix["easy"]["Time"])/1000, (np.array(timecourse_means.ix["easy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["easy"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='g')
-    ax1.plot(np.array(timecourse_means.ix["hard"]["Time"])/1000, (np.array(timecourse_means.ix["hard"]["L Dia Y [px]"])+np.array(timecourse_means.ix["hard"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='m')
-    ax2.plot(np.array(timecourse_means.ix["happy"]["Time"])/1000, (np.array(timecourse_means.ix["happy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["happy"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='g')
-    ax2.plot(np.array(timecourse_means.ix["fearful"]["Time"])/1000, (np.array(timecourse_means.ix["fearful"]["L Dia Y [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='m')
-    ax3.plot(np.array(timecourse_means.ix["scrambled"]["Time"])/1000, (np.array(timecourse_means.ix["scrambled"]["L Dia Y [px]"])+np.array(timecourse_means.ix["scrambled"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='m')
-    ax3.plot((np.array(timecourse_means.ix["happy"]["Time"])+np.array(timecourse_means.ix["happy"]["Time"]))/2000, (np.array(timecourse_means.ix["happy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["happy"]["L Dia X [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia Y [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia X [px]"]))/timecourse_fix_mean/4, color='g')
-
+    ax1.plot(np.array(timecourse_means.ix["easy"]["Time"])/1000, (np.array(timecourse_means.ix["easy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["easy"]["L Dia X [px]"]))/timecourse_fix_mean, color='g')
+    ax1.plot(np.array(timecourse_means.ix["hard"]["Time"])/1000, (np.array(timecourse_means.ix["hard"]["L Dia Y [px]"])+np.array(timecourse_means.ix["hard"]["L Dia X [px]"]))/timecourse_fix_mean, color='m')
+    ax2.plot(np.array(timecourse_means.ix["happy"]["Time"])/1000, (np.array(timecourse_means.ix["happy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["happy"]["L Dia X [px]"]))/timecourse_fix_mean, color='g')
+    ax2.plot(np.array(timecourse_means.ix["fearful"]["Time"])/1000, (np.array(timecourse_means.ix["fearful"]["L Dia Y [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia X [px]"]))/timecourse_fix_mean, color='m')
+    ax3.plot(np.array(timecourse_means.ix["scrambled"]["Time"])/1000, (np.array(timecourse_means.ix["scrambled"]["L Dia Y [px]"])+np.array(timecourse_means.ix["scrambled"]["L Dia X [px]"]))/timecourse_fix_mean, color='m')
+    ax3.plot((np.array(timecourse_means.ix["happy"]["Time"])+np.array(timecourse_means.ix["happy"]["Time"]))/2000, (np.array(timecourse_means.ix["happy"]["L Dia Y [px]"])+np.array(timecourse_means.ix["happy"]["L Dia X [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia Y [px]"])+np.array(timecourse_means.ix["fearful"]["L Dia X [px]"]))/timecourse_fix_mean/2, color='g')
+    
+    #~ fig.set_ylabel(r'Pupil ratio: $\mathsf{\frac{x+y}{\bar{x}_{fix}+\bar{y}_{fix}}}$', fontsize=11)
+    #~ fig.set_xlabel('Participant', fontsize=11)
+    #~ 
 if __name__ == '__main__':
     main()
     show()
