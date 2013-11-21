@@ -2,7 +2,15 @@
 __author__ = 'Horea Christian'
 
 
-def get_et_data(source=False):
+cats = [
+	['difficulty', 'easy', 'em100|cell22rand'],
+	['difficulty', 'hard', 'em40|cell10rand'],
+	['emotion', 'happy', 'HA-cell'],
+	['emotion', 'fearful', 'FE-cell'],
+	['emotion', 'scrambled', 'cell']
+	]
+
+def get_et_data(source=False, make='timecourse', make_categories=cats):
 	from os import path
 	import sys
 	import pandas as pd
@@ -28,104 +36,82 @@ def get_et_data(source=False):
 		raise InputError('For some reason the list of results files could not be populated.')
 
 	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
-	
-	data_all = pd.DataFrame([]) # empty container frame for concatenating input from multiple files
-	for lefile in ['ET002_face_OM Samples.txt', 'ET004_face_OM Samples.txt']:
-		print lefile
-		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
-		data_lefile = data_lefile.reset_index()
-		data_lefile['ID']=lefile.split('_')[0]
-		data_lefile = data_lefile.set_index(['ID'], append=True, drop=True)
-		data_lefile = data_lefile.reorder_levels([1,0])
-		#REMOVE NON-INFORMATIVE (ALWAYS NULL) COLUMNS
-		data_lefile = data_lefile.drop('L Mapped Diameter [mm]', axis=1)
-		data_lefile = data_lefile.drop('Aux1', axis=1)
-		data_lefile = data_lefile.drop('Frame', axis=1)
-		data_lefile = data_lefile.drop('Pupil Confidence', axis=1)
-		data_lefile = data_lefile.drop('R Validity', axis=1)
-		#END REMOVE NON-INFORMATIVE (ALWAYS NULL) COLUMNS
-		print data_lefile.ix[:10]
-		#~ print data_lefile[(data_lefile['Type'] == 'MSG')][['Trial','L Raw X [px]']]
-		
-		
-		
-		
-		
-		#~ data_all = pd.concat([data_all, data_lefile], ignore_index=True)
-		#~ ID = lefile.split('_')[0]
-		#~ multindex = [np.array(ID*len(data_lefile)),np.array(np.arange())]
-		#~ data_lefile.reindex(
-	
-
-def get_and_filter_results(experiment=False, source=False, remove='', mismeasurement='remove', apply_correct_values=False, make_COI=False):
-	import pandas as pd
-	from os import path
-	import sys
-	from chr_helpers import get_config_file
-
-	config = get_config_file(localpath=path.dirname(path.realpath(__file__))+'/')
-	
-
-	
-	if source == 'server':
-		from HTMLParser import HTMLParser
-		import urllib
-		class ChrParser(HTMLParser):
-			def handle_starttag(self, tag, attrs):
-				if tag =='a':
-					for key, value in attrs:
-						if key == 'href' and value.endswith('.csv'):
-							pre_fileslist.append(value)
-		results_dir = data_path+experiment+'/px'+str(prepixelation)+'/'
-		print results_dir
-		data_url = urllib.urlopen(results_dir).read()
-		parser = ChrParser()
-		pre_fileslist = []
-		parser.feed(data_url) # pre_fileslist gets populated here
-	elif source == 'live':
-		from os import listdir
-		results_dir = path.dirname(path.dirname(path.realpath(__file__))) + data_path + str(prepixelation) + '/'
-		results_dir = path.expanduser(results_dir)
-		pre_fileslist = listdir(results_dir)
-	elif source == 'local':
-		from os import listdir
-		results_dir = data_path + experiment + '/px' + str(prepixelation) + '/'
-		results_dir = path.expanduser(results_dir)
-		pre_fileslist = listdir(results_dir)
-		
-	print('Loading data from '+results_dir)
-		
-	if pre_fileslist == []:
-		raise InputError('For some reason the list of results files could not be populated.')
-	files = [lefile for lefile in pre_fileslist if lefile.endswith('.csv') and not lefile.endswith(ignore_filename+'.csv')]
+	files = files[3:4]
 	
 	data_all = pd.DataFrame([]) # empty container frame for concatenating input from multiple files
 	for lefile in files:
-		data_lefile = pd.DataFrame.from_csv(results_dir+lefile)
-		data_lefile['ID'] = path.splitext(lefile)[0]
-		scrambling_list = set(data_lefile['scrambling'])
-		if apply_correct_values:
-			data_lefile=correct_values(data_lefile)	
-		if make_COI:
-			data_lefile = categories_of_interest(data_lefile, scrambling_list)
-		elif mismeasurement == 'fix':
-			make_COI == True
-			data_lefile = categories_of_interest(data_lefile, scrambling_list)
-		if mismeasurement == 'remove':
-			data_lefile = data_lefile[data_lefile['RT'] >0] # remove entries with instant RTs here
-		elif mismeasurement == 'nan':
-			data_lefile.ix[(data_lefile['RT'] <=0), 'RT'] = False # remove entries with incorrect answers here
-		elif mismeasurement == 'fix':
-			import numpy as np
-			for COI in set(data_lefile['COI']):
-				data_lefile.ix[(data_lefile['RT'] <=0) & (data_lefile['COI'] == COI), 'RT'] = np.median(data_lefile[data_lefile['COI'] == COI]['RT']) #replace missing values with the median of the repecitive COI
-		if 'no-response' in remove:
-			data_lefile = data_lefile[data_lefile['keypress'] != 'none'] # remove entries with no answers here
-		if 'incorrect' in remove:
-			data_lefile = data_lefile[data_lefile['correct answer'] == data_lefile['keypress']] # remove entries with incorrect answers here
-		data_all = pd.concat([data_all, data_lefile], ignore_index=True)
-	return data_all
+		print lefile
+		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
+		data_lefile = data_lefile.reset_index()
+		data_lefile = data_lefile.dropna(axis=1, how='all', thresh=3) #remove non informative (null) columns
+				
+		#CUTOFF AT 'pulse_start'
+		cutoff = data_lefile[(data_lefile['L Raw X [px]'] == '# Message: pulse_start')].index.tolist()
+		cutoff = int(cutoff[-1])
+		data_lefile = data_lefile[cutoff:]
+		data_lefile = data_lefile.reset_index() #make new index
+		data_lefile = data_lefile.drop(['index'],1) # drop old index
+		data_lefile.index.name = 'measurement'
+		data_lefile['Trial'] = data_lefile['Trial'] - data_lefile['Trial'].ix[0] #trial number relative to first remaining trial
+		data_lefile['Time'] = (data_lefile['Time'] - data_lefile['Time'].ix[0])/1000 #time relative to first remaining time point; turn time to milliseconds
+		#END CUTOFF AT 'pulse_start'
+		
+		if make_categories:
+			new_category_names = set([new_cat[0] for new_cat in cats])
+			for new_category_name in new_category_names:
+				data_lefile[new_category_name]='' 
+			trial_key = data_lefile[(data_lefile['Type'] == 'MSG')][['Trial','L Raw X [px]']].rename(columns={'L Raw X [px]': 'message'}) #crop and rename
+			trial_key = np.array(trial_key) #for easier iteration
+			for category in cats:
+				criterion = category[-1]
+				for trial in trial_key:
+					trial[1] = trial[1].split(' ')[-1]
+					if '-' in criterion:
+						if criterion.split('-')[0] in trial[1] and criterion.split('-')[1] not in trial[1]:
+							data_lefile.ix[(data_lefile['Trial']==trial[0]), category[0]] = category[1]
+					elif '|' in criterion:
+						if criterion.split('|')[0] in trial[1] or criterion.split('|')[1] in trial[1]:
+							data_lefile.ix[(data_lefile['Trial']==trial[0]), category[0]] = category[1]
+					else:
+						if criterion in trial[1]:
+							data_lefile.ix[(data_lefile['Trial']==trial[0]), category[0]] = category[1]
+		
+		#~ #MAKE MULTIINDEX
+		grouped = data_lefile.reset_index().groupby('Trial')
+		data_lefile['measurement'] = grouped.apply(lambda x: pd.Series(np.arange(len(x)), x.index))
+		data_lefile.set_index(['Trial', 'measurement'], inplace=True)
+		#~ #MAKE MULTIINDEX
+		
+		if make == 'timecourse':
+			data_all = pd.DataFrame([])
+			for category in cats:
+				group = data_lefile[(data_lefile[category[0]] == category[1])]
+				group = group.groupby(level=1).mean()
+				group['Time'] = group['Time']-group['Time'].min()
+				group['CoI'] = ''
+				group['CoI'] = category[1]
+				group = group.set_index(['CoI'], append=True, drop=True)
+				group = group.reorder_levels(['CoI','measurement'])
+				data_all = pd.concat([data_all, group], ignore_index=False)
+				#~ data_all.set_index(['CoI', 'mesurement'])
+				print np.shape(data_all), data_all.ix[1]
+		elif isinstance(make, int):
+			data_lefile.set_index(['measurement'], inplace=True)
+			print data_lefile.unstack().columns.tolist()
+			avg = data_lefile.groupby("Trial")['L Dia X [px]'].agg({0: lambda x: x.head((len(x)+1)//make).mean(), 
+                                       1: lambda x: x.tail((len(x)+1)//make).mean()}) 
+			result = pd.melt(avg.reset_index(), "Trial", var_name="Measurement", value_name="L Dia X [px]")
+			result = result.sort("Trial").set_index(["Trial", "Measurement"])
+			print result
+		else:
+			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
+		#ADD ID
+		#~ data_lefile['ID']=lefile.split('_')[0]
+		#~ data_lefile = data_lefile.set_index(['ID'], append=True, drop=True)
+		#~ data_lefile = data_lefile.reorder_levels(['ID','Trial','measurement'])
+		#END ADD ID
+
 def categories_of_interest(data_frame, scrambling_list):
 	# DEFINE CATEGORIES OF INTEREST (COI)
 	data_frame['COI']='' 
@@ -142,5 +128,5 @@ def categories_of_interest(data_frame, scrambling_list):
 	return data_frame
 
 if __name__ == '__main__':
-	get_et_data()
+	get_et_data(make=2)
 	#~ show()
