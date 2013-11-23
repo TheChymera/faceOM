@@ -58,20 +58,20 @@ def corr(source=False, make_tight=True):
     
 def time_course(source=False, make_tight=True, compare="difficulty"):
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
-    #~ print timecourse.index.tolist()
+    all_timecoursws["Pupil"] = (all_timecourses["L Dia Y [px]"] + all_timecourses["L Dia X [px]"])/2
 
     timecourse_means = all_timecourses.groupby(level=(1,2)).mean()
     timecourse_meds = all_timecourses.groupby(level=(1,2)).aggregate(np.median)
     timecourse_sems = all_timecourses.groupby(level=(1,2)).aggregate(sem)
     
-    keys=["mean", "med", "sem"]
-    timecourses = pd.concat([timecourse_means,timecourse_meds,timecourse_sems], keys=keys)
-    timecourses_normed=timecourses.copy()
-    timecourses.to_csv("/home/chymera/tc.csv")
-    baseline_mean = (timecourses.ix["mean"].ix["fix"]["L Dia Y [px]"].mean()+timecourses.ix["mean"].ix["fix"]["L Dia Y [px]"].mean())/2 #baseline (fixcross) mean
-    f = lambda x: (x/2)
-    timecourses_normed.ix["mean"] = timecourses.ix["mean"].groupby(level=0).transform(f)
-    print timecourses_normed.ix["mean"]
+    
+    
+    #~ baseline_mean = (timecourses.ix["mean"].ix["fix"]["L Dia Y [px]"].mean()+timecourses.ix["mean"].ix["fix"]["L Dia Y [px]"].mean())/2 #baseline (fixcross) mean
+    #~ a = timecourses.ix["mean"]/baseline_mean
+    #~ a = a.copy()
+    #~ timecourses_normed.copy().ix["mean"] = a
+    #~ print a
+    #~ print timecourses_normed.ix["mean"]
     #~ print timecourses.ix["mean"].groupby(level=0).transform(f)
 
     #~ print timecourses_normed.ix["mean"].ix["fix"]["Time"]
@@ -83,21 +83,25 @@ def time_course(source=False, make_tight=True, compare="difficulty"):
         
         #NORM TO BASELINE
         baseline_mean = (timecourses.ix[key].ix["fix"]["L Dia Y [px]"].mean()+timecourses.ix[key].ix["fix"]["L Dia Y [px]"].mean())/2 #baseline (fixcross) mean
-        normalize = lambda x: (x / baseline_mean) #normalize function
+        #~ normalize = lambda x: (x / baseline_mean) #normalize function
         #~ print timecourses.ix[key].groupby(level=0).transform(normalize)
-        timecourses_normed.ix[key]=timecourses.ix[key].groupby(level=0).transform(normalize)
+        #~ temp = timecourses.ix[key]/baseline_mean
+        #~ temp = temp.copy()
+        timecourses_normed.ix[key]["Pupil"] = timecourses.ix[key]["Pupil"]/baseline_mean
         #END NORM TO BASELINE
         #~ print timecourses_normed.ix[key]["Time"]
         #~ print timecourses.ix[key]["Time"]
    
         #~ print timecourses.ix[key]["Time"]
-        timecourses_normed.ix[key]["Time"] = timecourses.ix[key]["Time"] # take non-normed time
-        #~ print timecourses_normed.ix[key]["Time"]
+        timecourses_normed.copy().ix[key]["Time"] = timecourses.ix[key]["Time"] # take non-normed time
         #~ print timecourses.ix[key]["Time"]
         timecourses_normed.ix[key]["Time"] = timecourses_normed.ix[key]["Time"]/1000 #make seconds (from milliseconds)
-        timecourses_normed.ix[key]["Pupil"] = (timecourses_normed.ix[key]["L Dia Y [px]"] + timecourses_normed.ix[key]["L Dia X [px]"])/2
+        #~ print timecourses_normed.ix[key]["Pupil"]
+        #~ timecourses_normed.copy().ix[key].copy()["Pupil"] = (timecourses_normed.ix[key]["L Dia Y [px]"] + timecourses_normed.ix[key]["L Dia X [px]"])/2
+        #~ print (timecourses_normed.ix[key]["L Dia Y [px]"] + timecourses_normed.ix[key]["L Dia X [px]"])/2
+        #~ print timecourses_normed.ix[key]["Pupil"]
         
-        timecourses_normed.ix[key] = timecourses_normed.ix[key].groupby(level=0).apply(downsample)
+        #~ timecourses_normed.copy().ix[key] = timecourses_normed.ix[key].groupby(level=0).apply(downsample)
         
     #~ print timecourses.ix["mean"].ix["fix"]["Time"]
     
