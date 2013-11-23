@@ -61,7 +61,7 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 			new_category_names = set([new_cat[0] for new_cat in make_categories])
 			for new_category_name in new_category_names:
 				data_lefile[new_category_name]='' 
-			trial_key = data_lefile[(data_lefile['Type'] == 'MSG')][['Trial','L Raw X [px]']].rename(columns={'L Raw X [px]': 'message'}) #crop and rename
+			trial_key = data_lefile[(data_lefile['Type'] == 'MSG')][['Trial','L Raw X [px]']] #crop
 			trial_key = np.array(trial_key) #for easier iteration
 			for category in make_categories:
 				criterion = category[-1]
@@ -86,9 +86,13 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 		if make == 'timecourse':
 			groups_all = []
 			for category in make_categories:
+				print "Binning category:"+"\""+category[1]+"\""
 				group = data_lefile[(data_lefile[category[0]] == category[1])]
-				group = group.groupby(level=1).mean()
-				group = group.ix[:240]
+				group = group.groupby(level=1).mean() # make per-category means
+				#~ if category[1] == 'fix':
+					#~ group = group.ix[:160] # because this has a jitter
+				#~ else:
+				group = group.ix[:240] # means for timepoints with missing values will be smaller.
 				group['Time'] = group['Time']-group['Time'].ix[0]
 				group['CoI'] = ''
 				group['CoI'] = category[1]
