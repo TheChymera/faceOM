@@ -20,11 +20,11 @@ categories = [
     ['fixation', 'fix', 'fix']
 	]
 
-def main(make=False, source=False, make_tight=True, compare="difficulty"):
+def main(make=False, source=False, make_tight=True, compare="difficulty", show=""):
     if make == 'corr':
         corr(make_tight)
-    if make == 'tc':
-        time_course(make_tight)
+    if make == 'time_c':
+        time_course(make_tight,show=show)
     
 def corr(source=False, make_tight=True):
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
@@ -56,9 +56,11 @@ def corr(source=False, make_tight=True):
     
     return pearson, m, c
     
-def time_course(source=False, make_tight=True, compare="difficulty"):
+def time_course(source=False, make_tight=True, compare="difficulty", show="fix, easy, hard"):
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     all_timecourses["Pupil"] = ((all_timecourses["L Dia Y [px]"] + all_timecourses["L Dia X [px]"])/2)**2
+
+    all_timecourses.to_csv("/home/chymera/all_timecourses.csv")
 
     timecourse_means = all_timecourses.groupby(level=(1,2)).mean()
     timecourse_meds = all_timecourses.groupby(level=(1,2)).aggregate(np.median)
@@ -83,23 +85,38 @@ def time_course(source=False, make_tight=True, compare="difficulty"):
     ax1.yaxis.grid(True, linestyle='-', which='major', color='#dddddd',alpha=0.6, zorder = 0)
     ax1.set_axisbelow(True)
     
-    if compare == "difficulty":
-        #~ ax1.plot(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8")
+    plotted = []
+    plotted_names = []
+    if "fix" in show:
+        ax1.plot(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8")
+        fix = Rectangle((0, 0), 1, 1, color="0.8")
+        plotted.append(fix)
+        plotted_names.append("Fixation")
+    if "easy" in show:
         ax1.plot(np.array(timecourse_plot.ix["easy"]["Time"]), np.array(timecourse_plot.ix["easy"]["Pupil"]), color='g')
+        easy = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(easy)
+        plotted_names.append("Easy Trials")
+    if "hard" in show:
         ax1.plot(np.array(timecourse_plot.ix["hard"]["Time"]), np.array(timecourse_plot.ix["hard"]["Pupil"]), color='m')
-    elif compare == "emotion":
-        ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), np.array(timecourse_normed.ix["happy"]["Pupil"]), color='g')
-        ax1.plot(np.array(timecourse_normed.ix["fearful"]["Time"]), np.array(timecourse_normed.ix["fearful"]["Pupil"]), color='m')
-    elif compare == "emotionality":
-        ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), (np.array(timecourse_normed.ix["happy"]["Pupil"])+np.array(timecourse_normed.ix["fearful"]["Pupil"]))/2, color='g')
-        ax1.plot(np.array(timecourse_normed.ix["scrambled"]["Time"]), np.array(timecourse_normed.ix["scrambled"]["Pupil"]), color='m')
-
+        hard = Rectangle((0, 0), 1, 1, color="m")
+        plotted.append(hard)
+        plotted_names.append("Hard Trials")
+    if "happy" in show:
+        happy = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), np.array(timecourse_normed.ix["happy"]["Pupil"]), color='g')
+    if "fearful" in show: 
+        fearful = ax1.plot(np.array(timecourse_normed.ix["fearful"]["Time"]), np.array(timecourse_normed.ix["fearful"]["Pupil"]), color='m')
+    if "emotion" in show:
+        emotion = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), (np.array(timecourse_normed.ix["happy"]["Pupil"])+np.array(timecourse_normed.ix["fearful"]["Pupil"]))/2, color='g')
+    if "scrambled" in show:
+        scrambled = ax1.plot(np.array(timecourse_normed.ix["scrambled"]["Time"]), np.array(timecourse_normed.ix["scrambled"]["Pupil"]), color='m')
     
-    #~ ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
-    #~ ax1.set_xlabel('Time [s]', fontsize=11)
+    ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
+    ax1.set_xlabel('Time [s]', fontsize=11)
+    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
     
-    #BEGIN PLOTTING
+    #END PLOTTING
 
 if __name__ == '__main__':
-    main(make="tc")
+    main(make="corr", show=["fix","easy","hard"])
     show()
