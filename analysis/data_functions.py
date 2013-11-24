@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 __author__ = 'Horea Christian'
 
-def get_et_data(source=False, make='timecourse', make_categories='', savefile='', force_new=False):
+def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', savefile='', force_new=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -49,7 +49,7 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 		#CUTOFF AT 'pulse_start'
 		cutoff = data_lefile[(data_lefile['L Raw X [px]'] == '# Message: pulse_start')].index.tolist()
 		cutoff = int(cutoff[-1])
-		data_lefile = data_lefile[cutoff:]
+		data_lefile = data_lefile[cutoff-pre_cutoff:]
 		data_lefile = data_lefile.reset_index() #make new index
 		data_lefile = data_lefile.drop(['index'],1) # drop old index
 		data_lefile.index.name = 'measurement'
@@ -101,12 +101,15 @@ def get_et_data(source=False, make='timecourse', make_categories='', savefile=''
 				groups_all.append(group)
 			data_lefile = pd.concat(groups_all)
 		elif isinstance(make, int):
-			data_lefile = data_lefile.reset_index()
-			avg = data_lefile.groupby("Trial")['L Dia X [px]'].agg({0: lambda x: x.head((len(x)+1)//make).mean(), 
-                                       1: lambda x: x.tail((len(x)+1)//make).mean()}) 
-			result = pd.melt(avg.reset_index(), "Trial", var_name="measurement", value_name="L Dia X [px]")
-			result = result.sort("Trial").set_index(["Trial", "measurement"])
-			print result
+			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
+			data_lefile = downsample(data_lefile, sample=make)
+			print np.shape(data_lefile)
+			print data_lefile.ix[230:250]
+			#~ avg = data_lefile.groupby("Trial")['L Dia X [px]'].agg({0: lambda x: x.head((len(x)+1)//make).mean(), 
+                                       #~ 1: lambda x: x.tail((len(x)+1)//make).mean()}) 
+			#~ result = pd.melt(avg.reset_index(), "Trial", var_name="measurement", value_name="L Dia X [px]")
+			#~ result = result.sort("Trial").set_index(["Trial", "measurement"])
+			#~ print result
 		else:
 			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
@@ -178,6 +181,15 @@ def sequence_check(source=False):
 			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
 				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
 
+def downsample(x, sample, group=''):
+	x = x.reset_index()
+	if group:
+		x = x.groupby(x[group].div(sample)).mean()
+		del x[group]
+	else:
+		x = x.groupby(x.div(sample)).mean()
+	return x
+
 if __name__ == '__main__':
-	sequence_check()
+	get_et_data(make=120)
 	#~ show()
