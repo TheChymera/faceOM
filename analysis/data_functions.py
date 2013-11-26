@@ -17,6 +17,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 	data_path = config.get('Addresses', source)
 	eye_tracking = config.get('Data', 'eye_tracking')
 	preprocessed_path = config.get('Data', 'df_dir')
+	regressor_dir = config.get('Data', 'regressor_dir')
 	#END IMPORT VARIABLES
 	
 	
@@ -24,6 +25,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		from os import listdir
 		data_path = path.expanduser(data_path+eye_tracking)
 		pre_fileslist = listdir(data_path)
+		regressor_path = path.expanduser(data_path+preprocessed_path+regressor_dir)
 		if savefile:
 			preprocessed_file = path.expanduser(data_path+preprocessed_path+savefile)
 			if path.exists(preprocessed_file) and not force_new:
@@ -45,6 +47,8 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
 		data_lefile = data_lefile.reset_index()
 		data_lefile = data_lefile.dropna(axis=1, how='all', thresh=3) #remove non informative (null) columns
+		if "L Mapped Diameter [mm]" in data_lefile.columns.tolist():
+			data_lefile = data_lefile.drop("L Mapped Diameter [mm]", 1) #this column contains no useful values and is not in all files, dropna however fails to remove it :/
 				
 		#CUTOFF AT 'pulse_start'
 		cutoff = data_lefile[(data_lefile['L Raw X [px]'] == '# Message: pulse_start')].index.tolist()
@@ -89,9 +93,6 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				print "Binning category:"+"\""+category[1]+"\""
 				group = data_lefile[(data_lefile[category[0]] == category[1])]
 				group = group.groupby(level=1).mean() # make per-category means
-				#~ if category[1] == 'fix':
-					#~ group = group.ix[:160] # because this has a jitter
-				#~ else:
 				group = group.ix[:240] # means for timepoints with missing values will be smaller.
 				group['Time'] = group['Time']-group['Time'].ix[0]
 				group['CoI'] = ''
@@ -103,31 +104,33 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		elif isinstance(make, int):
 			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
 			data_lefile = downsample(data_lefile, sample=make)
-			print np.shape(data_lefile)
-			print data_lefile.ix[230:250]
-			#~ avg = data_lefile.groupby("Trial")['L Dia X [px]'].agg({0: lambda x: x.head((len(x)+1)//make).mean(), 
-                                       #~ 1: lambda x: x.tail((len(x)+1)//make).mean()}) 
-			#~ result = pd.melt(avg.reset_index(), "Trial", var_name="measurement", value_name="L Dia X [px]")
-			#~ result = result.sort("Trial").set_index(["Trial", "measurement"])
-			#~ print result
+			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2
+			data_lefile_single = data_lefile["Pupil"]
+			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv')
 		else:
 			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
 		#ADD ID
 		data_lefile['ID']=lefile.split('_')[0]
 		data_lefile = data_lefile.set_index(['ID'], append=True, drop=True)
-		data_lefile = data_lefile.reorder_levels(['ID','CoI','measurement'])
+		if make == "timecourse":
+			data_lefile = data_lefile.reorder_levels(['ID','CoI','measurement'])
 		#END ADD ID
-		
+		print np.shape(data_lefile)
 		data_all.append(data_lefile)
 	data_all = pd.concat(data_all)
-	data_all.reorder_levels(['ID','CoI','measurement'])
 	
+	if make == "timecourse":
+		data_all.reorder_levels(['ID','CoI','measurement'])
+	
+	if isinstance(make, int):
+		data_all.to_csv(regressor_path+'all.csv')
+		
 	if savefile:
 		data_all.to_csv(preprocessed_file)
 	
 	return data_all
-
+	
 def sequence_check(source=False):
 	from os import path
 	import sys
@@ -181,13 +184,52 @@ def sequence_check(source=False):
 			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
 				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
 
+def get_rt_data(source=False):
+	from os import path
+	import sys
+	import pandas as pd
+	import numpy as np
+	import math
+	from chr_helpers import get_config_file
+	
+	config = get_config_file(localpath=path.dirname(path.realpath(__file__))+'/')
+	
+	#IMPORT VARIABLES
+	if not source:
+		source = config.get('Source', 'source')
+	data_path = config.get('Addresses', source)
+	eye_tracking = config.get('Data', 'eye_tracking')
+	preprocessed_path = config.get('Data', 'df_dir')
+	#END IMPORT VARIABLES
+	
+	
+	if source == 'local':
+		from os import listdir
+		data_path = path.expanduser(data_path+eye_tracking)
+		pre_fileslist = listdir(data_path)
+		if savefile:
+			preprocessed_file = path.expanduser(data_path+preprocessed_path+savefile)
+			if path.exists(preprocessed_file) and not force_new:
+				data_all = pd.DataFrame.from_csv(preprocessed_file)
+				data_all = data_all.set_index(['CoI'],append=True, drop=True)
+				data_all = data_all.set_index(['measurement'],append=True, drop=True)
+				data_all = data_all.reorder_levels(['ID','CoI','measurement'])
+				return data_all
+		
+	print('Loading data from '+data_path)
+	if pre_fileslist == []:
+		raise InputError('For some reason the list of results files could not be populated.')
+
+	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
+
+
 def downsample(x, sample, group=''):
 	x = x.reset_index()
 	if group:
 		x = x.groupby(x[group].div(sample)).mean()
 		del x[group]
 	else:
-		x = x.groupby(x.div(sample)).mean()
+		x = x.groupby(x.index/sample).mean()
 	return x
 
 if __name__ == '__main__':
