@@ -43,7 +43,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 	
 	data_all = [] # empty container list for listing per-file dataframes
 	for lefile in files:
-		print lefile
+		print "Processing " + lefile + ":"
 		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
 		data_lefile = data_lefile.reset_index()
 		data_lefile = data_lefile.dropna(axis=1, how='all', thresh=3) #remove non informative (null) columns
@@ -106,7 +106,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 			data_lefile = downsample(data_lefile, sample=make)
 			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2
 			data_lefile_single = data_lefile["Pupil"]
-			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv')
+			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv', index=False)
 		else:
 			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
@@ -116,7 +116,6 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		if make == "timecourse":
 			data_lefile = data_lefile.reorder_levels(['ID','CoI','measurement'])
 		#END ADD ID
-		print np.shape(data_lefile)
 		data_all.append(data_lefile)
 	data_all = pd.concat(data_all)
 	
@@ -231,7 +230,3 @@ def downsample(x, sample, group=''):
 	else:
 		x = x.groupby(x.index/sample).mean()
 	return x
-
-if __name__ == '__main__':
-	get_et_data(make=120)
-	#~ show()
