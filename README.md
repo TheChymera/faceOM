@@ -1,6 +1,6 @@
 #faceOM
 
-Python scripts for data processing and analysis written for the [“Neuronal Correlates of Occulometric Parameters in Face Recognition”](https://github.com/TheChymera/masterarbeit) research project.
+Python and MATLAB scripts for data processing and analysis written for the [“Neuronal Correlates of Occulometric Parameters in Face Recognition”](https://github.com/TheChymera/masterarbeit) research project.
 
 DEPENDS on:
 
