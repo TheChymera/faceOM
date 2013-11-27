@@ -41,14 +41,16 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 
 	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
 	
+	usually_empty = ["L Mapped Diameter [mm]", "L Validity", "R Validity", " Pupil Confidence"]
 	data_all = [] # empty container list for listing per-file dataframes
 	for lefile in files:
 		print "Processing " + lefile + ":"
 		data_lefile = pd.DataFrame.from_csv(data_path+lefile, header=42, sep='\t')
 		data_lefile = data_lefile.reset_index()
 		data_lefile = data_lefile.dropna(axis=1, how='all', thresh=3) #remove non informative (null) columns
-		if "L Mapped Diameter [mm]" in data_lefile.columns.tolist():
-			data_lefile = data_lefile.drop("L Mapped Diameter [mm]", 1) #this column contains no useful values and is not in all files, dropna however fails to remove it :/
+		for field in usually_empty:
+			if field in data_lefile.columns.tolist():
+				data_lefile = data_lefile.drop(field, 1) #this column contains no useful values and is not in all files, dropna however fails to remove it :/
 				
 		#CUTOFF AT 'pulse_start'
 		cutoff = data_lefile[(data_lefile['L Raw X [px]'] == '# Message: pulse_start')].index.tolist()
@@ -99,12 +101,13 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				group['CoI'] = category[1]
 				group = group.set_index(['CoI'], append=True, drop=True)
 				group = group.reorder_levels(['CoI','measurement'])
+				group["Pupil"] = ((group["L Dia Y [px]"] + group["L Dia X [px]"])/2)**2 # compute Pupil ~area
 				groups_all.append(group)
 			data_lefile = pd.concat(groups_all)
 		elif isinstance(make, int):
 			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
 			data_lefile = downsample(data_lefile, sample=make)
-			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2
+			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2 # compute Pupil ~area
 			data_lefile_single = data_lefile["Pupil"]
 			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv', index=False)
 		else:
@@ -183,7 +186,7 @@ def sequence_check(source=False):
 			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
 				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
 
-def get_rt_data(source=False):
+def get_rt_data(source=False, make_categories=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -199,29 +202,68 @@ def get_rt_data(source=False):
 	data_path = config.get('Addresses', source)
 	eye_tracking = config.get('Data', 'eye_tracking')
 	preprocessed_path = config.get('Data', 'df_dir')
+	rt_dir = config.get('Data', 'rt_dir')
 	#END IMPORT VARIABLES
 	
 	
 	if source == 'local':
 		from os import listdir
-		data_path = path.expanduser(data_path+eye_tracking)
+		data_path = path.expanduser(data_path+rt_dir)
 		pre_fileslist = listdir(data_path)
-		if savefile:
-			preprocessed_file = path.expanduser(data_path+preprocessed_path+savefile)
-			if path.exists(preprocessed_file) and not force_new:
-				data_all = pd.DataFrame.from_csv(preprocessed_file)
-				data_all = data_all.set_index(['CoI'],append=True, drop=True)
-				data_all = data_all.set_index(['measurement'],append=True, drop=True)
-				data_all = data_all.reorder_levels(['ID','CoI','measurement'])
-				return data_all
 		
 	print('Loading data from '+data_path)
 	if pre_fileslist == []:
 		raise InputError('For some reason the list of results files could not be populated.')
 
-	files = [lefile for lefile in pre_fileslist if lefile.endswith('.txt')]
-
-
+	files = [lefile for lefile in pre_fileslist if lefile.endswith('OM.log') and not lefile.startswith("KP") and not lefile.startswith("ET_")]
+	
+	data_all = [] # empty container list for listing per-file dataframes
+	for lefile in files:
+		with open(data_path+lefile, 'rb') as source:
+			a=0
+			for line in source:
+				if line == '\r\n':
+					a += 1
+				else:
+					a = 0
+				if a == 2:
+					break
+			df_file = pd.read_csv(source, engine='python', sep="\t")
+		if len(set(df_file["Type"])) <= 2:
+			continue #skip files which do not contain RT data (identified by having a monotonous "Type")
+		df_file = df_file[["Code","RT","Type"]]
+		df_file = df_file[(df_file["Code"] != "fixCross")]
+		df_file.reset_index(inplace=True)
+		df_file = df_file[(df_file["Type"] != "miss")] # remove missed trials
+		
+		if make_categories:
+			new_category_names = set([new_cat[0] for new_cat in make_categories])
+			for new_category_name in new_category_names:
+				df_file[new_category_name]='' 
+			trial_key = df_file[['index','Code']] #crop
+			trial_key = np.array(trial_key) #for easier iteration
+			for category in make_categories:
+				criterion = category[-1]
+				for trial in trial_key:
+					if '-' in criterion:
+						if criterion.split('-')[0] in trial[1] and criterion.split('-')[1] not in trial[1]:
+							df_file.ix[(df_file['index']==trial[0]), category[0]] = category[1]
+					elif '|' in criterion:
+						if criterion.split('|')[0] in trial[1] or criterion.split('|')[1] in trial[1]:
+							df_file.ix[(df_file['index']==trial[0]), category[0]] = category[1]
+					else:
+						if criterion in trial[1]:
+							df_file.ix[(df_file['index']==trial[0]), category[0]] = category[1]
+		df_file = df_file.drop(['index'],1) # drop old index
+		#ADD ID
+		df_file['ID']=lefile.split('-')[0]
+		df_file = df_file.set_index(['ID'], append=True, drop=True)
+		df_file = df_file.reorder_levels([1,0])
+		#END ADD ID
+		data_all.append(df_file)
+	data_all = pd.concat(data_all)
+	return data_all
+		
 def downsample(x, sample, group=''):
 	x = x.reset_index()
 	if group:
