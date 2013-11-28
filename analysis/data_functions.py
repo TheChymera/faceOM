@@ -95,7 +95,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				print "Binning category:"+"\""+category[1]+"\""
 				group = data_lefile[(data_lefile[category[0]] == category[1])]
 				group = group.groupby(level=1).mean() # make per-category means
-				group = group.ix[:240] # means for timepoints with missing values will be smaller.
+				group = group.ix[:239] # means for timepoints with missing values will be smaller.
 				group['Time'] = group['Time']-group['Time'].ix[0]
 				group['CoI'] = ''
 				group['CoI'] = category[1]
@@ -186,7 +186,7 @@ def sequence_check(source=False):
 			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
 				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
 
-def get_rt_data(source=False, make_categories=False):
+def get_rt_data(source=False, make_categories=False, no_response="", make_scrambled_yn=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -234,7 +234,11 @@ def get_rt_data(source=False, make_categories=False):
 		df_file = df_file[["Code","RT","Type"]]
 		df_file = df_file[(df_file["Code"] != "fixCross")]
 		df_file.reset_index(inplace=True)
-		df_file = df_file[(df_file["Type"] != "miss")] # remove missed trials
+		
+		if isinstance(no_response, int):
+			df_file.ix[(df_file["Type"] != "miss"), "RT"] = no_response # remove missed trials with int penalty value
+		else:
+			df_file = df_file[(df_file["Type"] != "miss")] # remove missed trials
 		
 		if make_categories:
 			new_category_names = set([new_cat[0] for new_cat in make_categories])
@@ -254,6 +258,12 @@ def get_rt_data(source=False, make_categories=False):
 					else:
 						if criterion in trial[1]:
 							df_file.ix[(df_file['index']==trial[0]), category[0]] = category[1]
+		
+		if make_scrambled_yn:
+		    df_file["scrambled"]=""
+		    df_file.ix[(df_file["emotion"] == "scrambled"), "scrambled"]= "yes"
+		    df_file.ix[(df_file["emotion"] != "scrambled"), "scrambled"]= "no"				
+		
 		df_file = df_file.drop(['index'],1) # drop old index
 		#ADD ID
 		df_file['ID']=lefile.split('-')[0]
@@ -262,6 +272,7 @@ def get_rt_data(source=False, make_categories=False):
 		#END ADD ID
 		data_all.append(df_file)
 	data_all = pd.concat(data_all)
+	data_all["RT"] = data_all["RT"] / 10000 #make seconds
 	return data_all
 		
 def downsample(x, sample, group=''):
