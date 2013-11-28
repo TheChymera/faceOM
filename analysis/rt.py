@@ -20,9 +20,8 @@ categories = [
 	['emotion', 'scrambled', 'cell']
 	]
 
-def main(make=False, source=False, make_tight=True, compare="difficulty", show="", make_std=True, make_sem=True, ecolor='0.3', elinewidth=2, total="means"):
-    data_all = get_rt_data(make_categories=categories)
-    data_all["RT"] = data_all["RT"] / 10000 #make seconds
+def main(make=False, source=False, make_tight=True, compare="difficulty", show="", make_std=True, make_sem=True, ecolor='0.3', elinewidth=2, total="means", make_scrambled_yn=False):
+    data_all = get_rt_data(make_categories=categories, make_scrambled_yn=make_scrambled_yn)
     
     ids = sorted(list(data_all.index.levels[0]))
     pos_ids = np.arange(len(ids))
@@ -84,7 +83,7 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     plt.axvline(pos_ids[-1]+1-width*width_multiplier, color='0.2') #separator - per-person/total
     #~ scrambling_list = [str(i) for i in scrambling_list if i != 0] #format as string for legend
     #~ 
-    ids=ids+['  ALL']
+    ids=ids+['   ALL']
     pos_ids = np.arange(len(ids))
     ax.set_ylabel(r'$\mathsf{\overline{RT}}$ [s]', fontsize=11)
     ax.set_xlabel('Participant', fontsize=11)
@@ -97,11 +96,11 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     axis.Axis.zoom(ax.yaxis, -0.5) # sets y margins further apart from the content proportional to its length
     ax.set_ylim(bottom=0) # after scaling to disregard padding unerneath zero.
     legend((plot_em_easy, plot_em_hard, plot_sc_easy, plot_sc_hard),('Strong Emotion','Weak Emotion', "Easy Scrambling", "Hard Scrambling"),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=4, fancybox=False, shadow=False,prop= FontProperties(size='8'))
-
+    data_all.to_csv("/home/chymera/RT.csv")
     return data_all
 
 
 if __name__ == '__main__':
-    main(show=["fix","easy","hard"])
+    main()
     show()
 
