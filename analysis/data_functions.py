@@ -95,7 +95,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				print "Binning category:"+"\""+category[1]+"\""
 				group = data_lefile[(data_lefile[category[0]] == category[1])]
 				group = group.groupby(level=1).mean() # make per-category means
-				group = group.ix[:239] # means for timepoints with missing values will be smaller.
+				group = group.ix[:240] # means for timepoints with missing values will be smaller.
 				group['Time'] = group['Time']-group['Time'].ix[0]
 				group['CoI'] = ''
 				group['CoI'] = category[1]

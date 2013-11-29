@@ -26,7 +26,7 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     if make == 'corr':
         corr(make_tight)
     if make == 'time_course':
-        time_course(make_tight,show=["fix", "easy", "hard", "rt_e", "rt_h"])
+        time_course(make_tight)
     if make == 'discrete_time':
         discrete_time(make_tight,show=show)
     
@@ -58,13 +58,13 @@ def corr(source=False, make_tight=True):
     ax1.set_xlim(left=10)
     legend((all_points, participant_means, regression),('Raw','Means', 'Regression'),loc='upper center', bbox_to_anchor=(0.5, 1.038), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='9'))
     
-    return pearson, m, c
+    return [list(pearson), m, c]
     
-def time_course(source=False, make_tight=True, compare="difficulty", show=["fix", "easy", "hard", "rt_e", "rt_h"]):
+def time_course(source=False, make_tight=True, make_sem=True, compare="difficulty", show=["emotion", "scrambled", "rt_em", "rt_sc"]):
     rt = get_rt_data(make_categories=categories)
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     all_timecourses["Time"] = all_timecourses["Time"]/1000 #make seconds (from milliseconds)
-    #~ all_timecourses.to_csv("/home/chymera/TC_all.csv")
+    all_timecourses.to_csv("/home/chymera/TC_all.csv")
     
     timecourse_means = all_timecourses.groupby(level=(1,2)).mean()
     timecourse_meds = all_timecourses.groupby(level=(1,2)).aggregate(np.median)
@@ -82,6 +82,20 @@ def time_course(source=False, make_tight=True, compare="difficulty", show=["fix"
     #~ timecourse_normed.to_csv("/home/chymera/TC_norm.csv")
     
     timecourse_plot = timecourse_normed.groupby(level=0).apply(downsample, sample=4, group='measurement')
+    
+    ###SEMS
+    timecourse_sems.ix["fix"]["Time"] = (timecourse_sems.ix["easy"]["Time"]+timecourse_sems.ix["hard"]["Time"])/2
+    #NORM TO BASELINE
+    SEM_timecourse_normed = timecourse_sems.groupby(level=0).transform(normalize)
+    #END NORM TO BASELINE
+
+    SEM_timecourse_normed["Time"] = timecourse_sems["Time"] # take non-normed time
+    
+    #~ timecourse_normed.to_csv("/home/chymera/TC_norm.csv")
+    
+    SEM_timecourse_plot = SEM_timecourse_normed.groupby(level=0).apply(downsample, sample=4, group='measurement')
+    ###END SEMS
+
 
     #BEGIN PLOTTING
     fig = figure(figsize=(5, 3), dpi=300,facecolor='#eeeeee', tight_layout=make_tight)
@@ -96,29 +110,66 @@ def time_course(source=False, make_tight=True, compare="difficulty", show=["fix"
         ax1.axvline(rt[(rt["difficulty"] == "easy")]["RT"].mean(), linewidth=0.3, color='g')
     if "rt_h" in show:
         ax1.axvline(rt[(rt["difficulty"] == "hard")]["RT"].mean(), linewidth=0.3, color='m')
+    if "rt_ha" in show:
+        ax1.axvline(rt[(rt["emotion"] == "happy")]["RT"].mean(), linewidth=0.3, color='g')
+    if "rt_fe" in show:
+        ax1.axvline(rt[(rt["emotion"] == "fearful")]["RT"].mean(), linewidth=0.3, color='m')
+    if "rt_em" in show:
+        ax1.axvline(rt[(rt["emotion"] != "scrambled")]["RT"].mean(), linewidth=0.3, color='g')
+    if "rt_sc" in show:
+        ax1.axvline(rt[(rt["emotion"] == "scrambled")]["RT"].mean(), linewidth=0.3, color='m')
     if "fix" in show:
-        ax1.plot(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8")
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]+SEM_timecourse_plot.ix["fix"]["Pupil"]/2), np.array(timecourse_plot.ix["fix"]["Pupil"]-SEM_timecourse_plot.ix["fix"]["Pupil"]/2), facecolor="0.8", edgecolor="none", alpha=0.2, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8",zorder=2)
         fix = Rectangle((0, 0), 1, 1, color="0.8")
         plotted.append(fix)
         plotted_names.append("Fixation")
     if "easy" in show:
-        ax1.plot(np.array(timecourse_plot.ix["easy"]["Time"]), np.array(timecourse_plot.ix["easy"]["Pupil"]), color='g')
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["easy"]["Time"]), np.array(timecourse_plot.ix["easy"]["Pupil"]+SEM_timecourse_plot.ix["easy"]["Pupil"]/2), np.array(timecourse_plot.ix["easy"]["Pupil"]-SEM_timecourse_plot.ix["easy"]["Pupil"]/2), facecolor="g", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["easy"]["Time"]), np.array(timecourse_plot.ix["easy"]["Pupil"]), color='g',zorder=2)
         easy = Rectangle((0, 0), 1, 1, color="g")
         plotted.append(easy)
         plotted_names.append("Easy Trials")
     if "hard" in show:
-        ax1.plot(np.array(timecourse_plot.ix["hard"]["Time"]), np.array(timecourse_plot.ix["hard"]["Pupil"]), color='m')
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["hard"]["Time"]), np.array(timecourse_plot.ix["hard"]["Pupil"]+SEM_timecourse_plot.ix["hard"]["Pupil"]/2), np.array(timecourse_plot.ix["hard"]["Pupil"]-SEM_timecourse_plot.ix["hard"]["Pupil"]/2), facecolor="m", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["hard"]["Time"]), np.array(timecourse_plot.ix["hard"]["Pupil"]), color='m',zorder=2)
         hard = Rectangle((0, 0), 1, 1, color="m")
         plotted.append(hard)
         plotted_names.append("Hard Trials")
     if "happy" in show:
-        happy = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), np.array(timecourse_normed.ix["happy"]["Pupil"]), color='g')
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["happy"]["Time"]), np.array(timecourse_plot.ix["happy"]["Pupil"]+SEM_timecourse_plot.ix["happy"]["Pupil"]/2), np.array(timecourse_plot.ix["happy"]["Pupil"]-SEM_timecourse_plot.ix["happy"]["Pupil"]/2), facecolor="g", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["happy"]["Time"]), np.array(timecourse_plot.ix["happy"]["Pupil"]), color='g',zorder=2)
+        happy = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(happy)
+        plotted_names.append("'Happy' Trials")
     if "fearful" in show: 
-        fearful = ax1.plot(np.array(timecourse_normed.ix["fearful"]["Time"]), np.array(timecourse_normed.ix["fearful"]["Pupil"]), color='m')
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["fearful"]["Time"]), np.array(timecourse_plot.ix["fearful"]["Pupil"]+SEM_timecourse_plot.ix["fearful"]["Pupil"]/2), np.array(timecourse_plot.ix["fearful"]["Pupil"]-SEM_timecourse_plot.ix["fearful"]["Pupil"]/2), facecolor="m", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["fearful"]["Time"]), np.array(timecourse_plot.ix["fearful"]["Pupil"]), color='m',zorder=2)
+        fearful = Rectangle((0, 0), 1, 1, color="m")
+        plotted.append(fearful)
+        plotted_names.append("'Fearful' Trials")
     if "emotion" in show:
-        emotion = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), (np.array(timecourse_normed.ix["happy"]["Pupil"])+np.array(timecourse_normed.ix["fearful"]["Pupil"]))/2, color='g')
+        tc = (np.array(timecourse_plot.ix["fearful"]["Time"])+np.array(timecourse_plot.ix["happy"]["Time"]))/2
+        v = (np.array(timecourse_plot.ix["fearful"]["Pupil"])+np.array(timecourse_plot.ix["happy"]["Pupil"]))/2
+        if make_sem:
+            se = (np.array(SEM_timecourse_plot.ix["fearful"]["Pupil"])+np.array(SEM_timecourse_plot.ix["happy"]["Pupil"]))/4
+            ax1.fill_between(tc, v+se, v-se, facecolor="g", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(tc, v, color='g',zorder=2)
+        emotion = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(emotion)
+        plotted_names.append("Emotion Trials")
     if "scrambled" in show:
-        scrambled = ax1.plot(np.array(timecourse_normed.ix["scrambled"]["Time"]), np.array(timecourse_normed.ix["scrambled"]["Pupil"]), color='m')
+        if make_sem:
+            ax1.fill_between(np.array(timecourse_plot.ix["scrambled"]["Time"]), np.array(timecourse_plot.ix["scrambled"]["Pupil"]+SEM_timecourse_plot.ix["scrambled"]["Pupil"]/2), np.array(timecourse_plot.ix["scrambled"]["Pupil"]-SEM_timecourse_plot.ix["scrambled"]["Pupil"]/2), facecolor="m", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["scrambled"]["Time"]), np.array(timecourse_plot.ix["scrambled"]["Pupil"]), color='m',zorder=2)
+        scrambled = Rectangle((0, 0), 1, 1, color="m")
+        plotted.append(scrambled)
+        plotted_names.append("Scrambled Trials")
     
     ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
     ax1.set_xlabel('Time [s]', fontsize=11)
@@ -133,7 +184,7 @@ def discrete_time(make_tight=True, show=""):
    
     discretize = {0:"S01", 1:"S02", 2:"S03", 3:"S04", 4:"S05", 5:"S06", 6:"S07", 7:"S08", 8:"S09", 9:"S10", 10:"S11", 11:"S12", 12:"S13", 13:"S14", 14:"S15", 15:"S16", 16:"S17", 17:"S18", 18:"S19", 19:"S20"}
     
-    df = df.groupby(level=[0,1]).apply(downsample, sample=40, group='measurement')
+    df = df.groupby(level=[0,1]).apply(downsample, sample=41, group='measurement')
     df.reset_index(inplace=True)
 
     #fixation has a jitter and building a mean gives smaller time values for the last time points:
