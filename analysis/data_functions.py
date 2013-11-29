@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 __author__ = 'Horea Christian'
 
-def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', savefile='', force_new=False):
+def get_et_data(source=False, make='timecourse', pre_cutoff=360, make_categories='', savefile='', force_new=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -99,12 +98,13 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				group['CoI'] = category[1]
 				group = group.set_index(['CoI'], append=True, drop=True)
 				group = group.reorder_levels(['CoI','measurement'])
+				group["Pupil"] = ((group["L Dia Y [px]"] + group["L Dia X [px]"])/2)**2 #Make Pupil ~area
 				groups_all.append(group)
 			data_lefile = pd.concat(groups_all)
 		elif isinstance(make, int):
 			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
 			data_lefile = downsample(data_lefile, sample=make)
-			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2
+			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2 #Make Pupil ~area
 			data_lefile_single = data_lefile["Pupil"]
 			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv', index=False)
 		else:

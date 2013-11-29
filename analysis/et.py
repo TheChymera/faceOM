@@ -23,7 +23,7 @@ categories = [
 def main(make=False, source=False, make_tight=True, compare="difficulty", show=""):
     if make == 'corr':
         corr(make_tight)
-    if make == 'time_c':
+    if make == 'time_course':
         time_course(make_tight,show=show)
     
 def corr(source=False, make_tight=True):
@@ -58,7 +58,6 @@ def corr(source=False, make_tight=True):
     
 def time_course(source=False, make_tight=True, compare="difficulty", show="fix, easy, hard"):
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
-    all_timecourses["Pupil"] = ((all_timecourses["L Dia Y [px]"] + all_timecourses["L Dia X [px]"])/2)**2
 
     all_timecourses.to_csv("/home/chymera/all_timecourses.csv")
 
@@ -75,6 +74,8 @@ def time_course(source=False, make_tight=True, compare="difficulty", show="fix, 
 
     timecourse_normed["Time"] = timecourse_means["Time"] # take non-normed time
     timecourse_normed["Time"] = timecourse_normed["Time"]/1000 #make seconds (from milliseconds)
+    
+    timecourse_normed.to_csv("/home/chymera/tc_normed.csv")
     
     timecourse_plot = timecourse_normed.groupby(level=0).apply(downsample, sample=4, group='measurement')
 
@@ -118,5 +119,5 @@ def time_course(source=False, make_tight=True, compare="difficulty", show="fix, 
     #END PLOTTING
 
 if __name__ == '__main__':
-    main(make="corr", show=["fix","easy","hard"])
+    main(make="time_course", show=["fix","easy","hard"])
     show()
