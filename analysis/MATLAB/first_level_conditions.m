@@ -12,22 +12,22 @@ list_faceOM;
 for s=1:length(list)
     
     subject = list{s};
-    newFolder = ['/home/klips/Documents/Eye_Tracking/first_level/' subject '/results/faceOM/'];
+    newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/faceOM/'];
  
     
-    for i=1:520 
-        array_scan{i} =  ['/home/klips/Documents/Eye_Tracking/first_level/' subject '/epi/faceOM/swa' subject '_ep2d_faceOM.nii,' num2str(i)]; 
+    for i=1:515
+        array_scan{i} =  ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/swa' subject '_ep2d_faceOM.nii,' num2str(i)]; 
     end
     %define onset file
-    onset_file = ['/home/klips/Documents/Eye_Tracking/first_level/' subject '/onsets/' subject '-faceOM_onset.mat'];
+    onset_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/onsets/' subject '-faceOM_onset.mat'];
     %define movement regressor file
-    movement_file = ['/home/klips/Documents/Eye_Tracking/first_level/' subject '/epi/faceOM/rp_a' subject '_ep2d_faceOM.txt'];
+    movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/chr_rp_a' subject '_ep2d_faceOM.txt'];
     %starts spm
     spm('defaults', 'FMRI');
 
     %-----------------------SPM Batch Job----------------------------------
     
- %-----------------------------------------------------------------------
+%-----------------------------------------------------------------------
 % Job configuration created by cfg_util (rev $Rev: 3944 $)
 %-----------------------------------------------------------------------
 matlabbatch{1}.spm.stats.fmri_spec.dir = {newFolder};
@@ -69,38 +69,41 @@ matlabbatch{3}.spm.stats.con.spmmat(1).sname = 'fMRI model specification: SPM.ma
 matlabbatch{3}.spm.stats.con.spmmat(1).src_exbranch = substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1});
 matlabbatch{3}.spm.stats.con.spmmat(1).src_output = substruct('.','spmmat');
 matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'em100_HA > cell22';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [1/3 1/3 1/3 0 0 0 0 0 0 0 0 0 -1/3 -1/3 -1/3];
+matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [1 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0];
 matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'none';
 matlabbatch{3}.spm.stats.con.consess{2}.tcon.name = 'em100_FE > cell22';
-matlabbatch{3}.spm.stats.con.consess{2}.tcon.convec = [0 0 0  1/3 1/3 1/3 0 0 0 0 0 0 -1/3 -1/3 -1/3];
+matlabbatch{3}.spm.stats.con.consess{2}.tcon.convec = [0 0 0 1 0 0 0 0 0 0 0 0 -1 0 0 0 0 0];
 matlabbatch{3}.spm.stats.con.consess{2}.tcon.sessrep = 'none';
 matlabbatch{3}.spm.stats.con.consess{3}.tcon.name = 'em40_HA > cell10';
-matlabbatch{3}.spm.stats.con.consess{3}.tcon.convec = [0 0 0 0 0 0  1/3 1/3 1/3 0 0 0 0 0 0 -1/3 -1/3 -1/3];
+matlabbatch{3}.spm.stats.con.consess{3}.tcon.convec = [0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 -1 0 0];
 matlabbatch{3}.spm.stats.con.consess{3}.tcon.sessrep = 'none';
 matlabbatch{3}.spm.stats.con.consess{4}.tcon.name = 'em40_FE > cell10';
-matlabbatch{3}.spm.stats.con.consess{4}.tcon.convec = [0 0 0 0 0 0 0 0 0 1/3 1/3 1/3  0 0 0 -1/3 -1/3 -1/3];
+matlabbatch{3}.spm.stats.con.consess{4}.tcon.convec = [0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0 0];
 matlabbatch{3}.spm.stats.con.consess{4}.tcon.sessrep = 'none';
-matlabbatch{3}.spm.stats.con.consess{5}.tcon.name = 'cell22 > cell10';
-matlabbatch{3}.spm.stats.con.consess{5}.tcon.convec = [0 0 0 0 0 0 0 0 0 0 0 0  1/3 1/3 1/3  -1/3 -1/3 -1/3];
+matlabbatch{3}.spm.stats.con.consess{5}.tcon.name = 'cell10 > cell22';
+matlabbatch{3}.spm.stats.con.consess{5}.tcon.convec = [0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 1 0 0];
 matlabbatch{3}.spm.stats.con.consess{5}.tcon.sessrep = 'none';
-<<<<<<< HEAD
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'em100 > cell22';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [1/3 1/3 1/3 0 0 0 0 0 0 0 0 0 -1/3 -1/3 -1/3];
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'none';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'em40 > cell10';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [1/3 1/3 1/3 0 0 0 0 0 0 0 0 0 -1/3 -1/3 -1/3];
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'none';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'em100 > em40';
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [1/3 1/3 1/3 0 0 0 0 0 0 0 0 0 -1/3 -1/3 -1/3];
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'none';
-=======
->>>>>>> 3d6277f90024bce3eb39bc340f217848fb844c13
-matlabbatch{3}.spm.stats.con.consess{6}.fcon.name = 'alles';
-matlabbatch{3}.spm.stats.con.consess{6}.fcon.convec = {
-                                                       eye(24)
+matlabbatch{3}.spm.stats.con.consess{6}.tcon.name = 'em100 > cell22';
+matlabbatch{3}.spm.stats.con.consess{6}.tcon.convec = [1 0 0 1 0 0 0 0 0 0 0 0 -2 0 0 0 0 0];
+matlabbatch{3}.spm.stats.con.consess{6}.tcon.sessrep = 'none';
+matlabbatch{3}.spm.stats.con.consess{7}.tcon.name = 'em40 > cell10';
+matlabbatch{3}.spm.stats.con.consess{7}.tcon.convec = [0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 -2 0 0];
+matlabbatch{3}.spm.stats.con.consess{7}.tcon.sessrep = 'none';
+matlabbatch{3}.spm.stats.con.consess{8}.tcon.name = 'em40 > em100';
+matlabbatch{3}.spm.stats.con.consess{8}.tcon.convec = [-1 0 0 -1 0 0 1 0 0 1 0 0 0 0 0 0 0 0];
+matlabbatch{3}.spm.stats.con.consess{8}.tcon.sessrep = 'none';
+
+matlabbatch{3}.spm.stats.con.consess{9}.tcon.name = 'Pupil';
+matlabbatch{3}.spm.stats.con.consess{9}.tcon.convec = [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1];
+matlabbatch{3}.spm.stats.con.consess{9}.tcon.sessrep = 'none';
+
+matlabbatch{3}.spm.stats.con.consess{10}.fcon.name = 'alles';
+matlabbatch{3}.spm.stats.con.consess{10}.fcon.convec = {
+                                                       eye(25)
                                                        }';
-matlabbatch{3}.spm.stats.con.consess{6}.fcon.sessrep = 'none';
+matlabbatch{3}.spm.stats.con.consess{10}.fcon.sessrep = 'none';
 matlabbatch{3}.spm.stats.con.delete = 0;
+
 
 
     %-----------------------SPM Batch Job END------------------------------
@@ -109,8 +112,4 @@ matlabbatch{3}.spm.stats.con.delete = 0;
     spm_jobman('run', matlabbatch)
 
 
-<<<<<<< HEAD
 end
-=======
-end
->>>>>>> 3d6277f90024bce3eb39bc340f217848fb844c13
