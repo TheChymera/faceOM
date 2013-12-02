@@ -26,7 +26,9 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     if make == 'corr':
         corr(make_tight)
     if make == 'time_course':
-        time_course(make_tight)
+        time_course(make_tight, show=show)
+    if make == 'regressor':
+        get_et_data(make="regressor", diff="")
     if make == 'discrete_time':
         discrete_time(make_tight,show=show)
     
@@ -51,16 +53,16 @@ def corr(source=False, make_tight=True):
     ax1.plot(np.array(all_timecourses["L Dia X [px]"])[10000:],np.array(all_timecourses["L Dia X [px]"])[10000:]*m+c,color='m', linewidth=0.8,antialiased=True,zorder=2)
     regression = Rectangle((0, 0), 1, 1, color="m")
 
-    
+    ax1.tick_params(axis='both', labelsize=8)
     ax1.set_ylabel('Y-axis Pupil Diameter [px]', fontsize=9)
     ax1.set_xlabel('X-axis Pupil Diameter [px]', fontsize=9)
     ax1.set_ylim(bottom=10) 
     ax1.set_xlim(left=10)
-    legend((all_points, participant_means, regression),('Raw','Means', 'Regression'),loc='upper center', bbox_to_anchor=(0.5, 1.038), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='9'))
+    legend((all_points, participant_means, regression),('Raw','Means', 'Regression'),loc='upper center', bbox_to_anchor=(0.5, 1.038), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='8'))
     
     return [list(pearson), m, c]
     
-def time_course(source=False, make_tight=True, make_sem=True, compare="difficulty", show=["emotion", "scrambled", "rt_em", "rt_sc"]):
+def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "scrambled", "rt_em", "rt_sc"]):
     rt = get_rt_data(make_categories=categories)
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     all_timecourses["Time"] = all_timecourses["Time"]/1000 #make seconds (from milliseconds)
@@ -118,6 +120,8 @@ def time_course(source=False, make_tight=True, make_sem=True, compare="difficult
         ax1.axvline(rt[(rt["emotion"] != "scrambled")]["RT"].mean(), linewidth=0.3, color='g')
     if "rt_sc" in show:
         ax1.axvline(rt[(rt["emotion"] == "scrambled")]["RT"].mean(), linewidth=0.3, color='m')
+    if "rt_all" in show:
+        ax1.axvline(rt[(rt["difficulty"] == "easy") | (rt["difficulty"] == "hard")]["RT"].mean(), linewidth=0.3, color='g')
     if "fix" in show:
         if make_sem:
             ax1.fill_between(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]+SEM_timecourse_plot.ix["fix"]["Pupil"]/2), np.array(timecourse_plot.ix["fix"]["Pupil"]-SEM_timecourse_plot.ix["fix"]["Pupil"]/2), facecolor="0.8", edgecolor="none", alpha=0.2, zorder=0)
@@ -170,10 +174,21 @@ def time_course(source=False, make_tight=True, make_sem=True, compare="difficult
         scrambled = Rectangle((0, 0), 1, 1, color="m")
         plotted.append(scrambled)
         plotted_names.append("Scrambled Trials")
-    
+    if "all" in show:
+        all_tc = (np.array(timecourse_plot.ix["easy"]["Time"])+np.array(timecourse_plot.ix["hard"]["Time"]))/2
+        all_v = (np.array(timecourse_plot.ix["easy"]["Pupil"])+np.array(timecourse_plot.ix["hard"]["Pupil"]))/2
+        if make_sem:
+            all_se = (np.array(SEM_timecourse_plot.ix["easy"]["Pupil"])+np.array(SEM_timecourse_plot.ix["hard"]["Pupil"]))/4
+            ax1.fill_between(all_tc, all_v+all_se, all_v-all_se, facecolor="g", edgecolor="none", alpha=0.1, zorder=0)
+        ax1.plot(all_tc, all_v, color='g',zorder=2)
+        ALL = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(ALL)
+        plotted_names.append("All Trials")
+
+    ax1.tick_params(axis='both', labelsize=8)
     ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
     ax1.set_xlabel('Time [s]', fontsize=11)
-    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
+    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='9'))
     #END PLOTTING
     
     return timecourse_normed
@@ -239,7 +254,7 @@ def discrete_time(make_tight=True, show=""):
     ax1.set_xlabel('Time Series Sextiles [66 ms]', fontsize=11)
     axis.Axis.zoom(ax1.xaxis, -0.6) # sets x margins further apart from the content proportional to its length
     axis.Axis.zoom(ax1.yaxis, -0.4) # sets x margins further apart from the content proportional to its length
-    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
+    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
     #END PLOTTING
     
     print ttest_rel(np.array(df[(df["dTime"]=="S6") & (df["CoI"]=="easy")]["Pupil"]),np.array(df[(df["dTime"]=="S6") & (df["CoI"]=="hard")]["Pupil"]))
@@ -250,5 +265,6 @@ def discrete_time(make_tight=True, show=""):
     return df
 
 if __name__ == '__main__':
-    main(make="time_course",show=["fix", "easy", "hard", "rt_e", "rt_h"])
+    #~ main(make="time_course",show=["fix", "all", "rt_all"])
+    main(make="regressor")
     show()

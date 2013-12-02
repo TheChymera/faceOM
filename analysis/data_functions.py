@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 __author__ = 'Horea Christian'
 
-def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', savefile='', force_new=False):
+def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', diff=False, savefile='', force_new=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -18,6 +18,10 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 	eye_tracking = config.get('Data', 'eye_tracking')
 	preprocessed_path = config.get('Data', 'df_dir')
 	regressor_dir = config.get('Data', 'regressor_dir')
+	if make == "regressor":
+		make = config.getint("Settings", "make")
+	if isinstance(make, int) and not pre_cutoff:
+		pre_cutoff = config.getint('Settings', 'pre_cutoff')
 	#END IMPORT VARIABLES
 	
 	
@@ -58,6 +62,32 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		data_lefile = data_lefile[cutoff-pre_cutoff:]
 		data_lefile = data_lefile.reset_index() #make new index
 		data_lefile = data_lefile.drop(['index'],1) # drop old index
+		
+		if isinstance(make, int):
+			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
+			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2 # compute Pupil ~area
+			data_lefile_single = data_lefile["Pupil"]
+			
+			if diff == "prebin":
+				data_lefile_single = data_lefile_single.diff()
+			
+			data_lefile_single = downsample(data_lefile_single, sample=make)
+			
+			if diff == "postbin":
+				data_lefile_single = data_lefile_single.diff()
+				data_lefile_single = data_lefile_single.ix[1:,1]
+				data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'_diff_postbin.csv', index=False, header=False, index_label=None)
+			
+			elif diff == "prebin":
+				data_lefile_single = data_lefile_single.ix[:,1]
+				data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'_diff_prebin.csv', index=False, header=False, index_label=None)
+			
+			else:
+				data_lefile_single = data_lefile_single.ix[:,1]
+				data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'_new.csv', index=False,  header=False, index_label=None)
+			
+			continue
+		
 		data_lefile.index.name = 'measurement'
 		data_lefile['Trial'] = data_lefile['Trial'] - data_lefile['Trial'].ix[0] #trial number relative to first remaining trial
 		data_lefile['Time'] = (data_lefile['Time'] - data_lefile['Time'].ix[0])/1000 #time relative to first remaining time point; turn time to milliseconds
@@ -104,12 +134,6 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 				group["Pupil"] = ((group["L Dia Y [px]"] + group["L Dia X [px]"])/2)**2 # compute Pupil ~area
 				groups_all.append(group)
 			data_lefile = pd.concat(groups_all)
-		elif isinstance(make, int):
-			data_lefile = data_lefile[(data_lefile["Type"] != "MSG")]
-			data_lefile = downsample(data_lefile, sample=make)
-			data_lefile["Pupil"] = ((data_lefile["L Dia Y [px]"] + data_lefile["L Dia X [px]"])/2)**2 # compute Pupil ~area
-			data_lefile_single = data_lefile["Pupil"]
-			data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv', index=False)
 		else:
 			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
@@ -120,18 +144,14 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 			data_lefile = data_lefile.reorder_levels(['ID','CoI','measurement'])
 		#END ADD ID
 		data_all.append(data_lefile)
-	data_all = pd.concat(data_all)
-	
 	if make == "timecourse":
+		data_all = pd.concat(data_all)
 		data_all.reorder_levels(['ID','CoI','measurement'])
-	
-	if isinstance(make, int):
-		data_all.to_csv(regressor_path+'all.csv')
+
+		if savefile:
+			data_all.to_csv(preprocessed_file)
 		
-	if savefile:
-		data_all.to_csv(preprocessed_file)
-	
-	return data_all
+		return data_all
 	
 def sequence_check(source=False):
 	from os import path
