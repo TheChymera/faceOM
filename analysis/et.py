@@ -11,7 +11,7 @@ from matplotlib import axis
 from pylab import figure, show, errorbar, setp, legend
 from matplotlib.font_manager import FontProperties
 from matplotlib.patches import Rectangle
-from scipy.stats import ttest_rel, ttest_ind
+from scipy.stats import ttest_rel, ttest_ind, ttest_1samp
 
 categories = [
 	['difficulty', 'easy', 'em100|cell22rand'],
@@ -67,34 +67,21 @@ def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     all_timecourses["Time"] = all_timecourses["Time"]/1000 #make seconds (from milliseconds)
     all_timecourses.to_csv("/home/chymera/TC_all.csv")
-    
-    timecourse_means = all_timecourses.groupby(level=(1,2)).mean()
-    timecourse_meds = all_timecourses.groupby(level=(1,2)).aggregate(np.median)
-    timecourse_sems = all_timecourses.groupby(level=(1,2)).aggregate(sem)
 
-    timecourse_means.ix["fix"]["Time"] = (timecourse_means.ix["easy"]["Time"]+timecourse_means.ix["hard"]["Time"])/2
-    #NORM TO BASELINE
-    baseline_mean = timecourse_means.ix["fix"]["Pupil"].mean() #baseline (fixcross) mean
-    normalize = lambda x: (x / baseline_mean) #normalize function
-    timecourse_normed = timecourse_means.groupby(level=0).transform(normalize)
-    #END NORM TO BASELINE
+    all_timecourses = all_timecourses.reset_index(drop=False)
+    all_timecourses = all_timecourses.set_index(["CoI","measurement"], append=True, drop=True)
+    all_timecourses = all_timecourses.reset_index(level=0,drop=True)
 
-    timecourse_normed["Time"] = timecourse_means["Time"] # take non-normed time
+    #NORMALIZE TO "FIX" BASELINE
+    baseline_mean = all_timecourses.ix["fix"]["Pupil"].mean() #baseline (fixcross) mean
+    all_timecourses["Pupil"] = all_timecourses["Pupil"]/baseline_mean
+    #END NORMALIZE
     
-    #~ timecourse_normed.to_csv("/home/chymera/TC_norm.csv")
+    timecourse_plot = all_timecourses.groupby(level=(0,1)).mean() # explicitly create means, technically this line is useless, but I don't trust the next one :D 
+    timecourse_plot = timecourse_plot.groupby(level=0).apply(downsample, sample=4, group='measurement') # also creates means ;)
     
-    timecourse_plot = timecourse_normed.groupby(level=0).apply(downsample, sample=4, group='measurement')
-    
-    ###SEMS
-    timecourse_sems.ix["fix"]["Time"] = (timecourse_sems.ix["easy"]["Time"]+timecourse_sems.ix["hard"]["Time"])/2
-    #NORM TO BASELINE
-    SEM_timecourse_normed = timecourse_sems.groupby(level=0).transform(normalize)
-    #END NORM TO BASELINE
-
-    SEM_timecourse_normed["Time"] = timecourse_sems["Time"] # take non-normed time
-    
-    #~ timecourse_normed.to_csv("/home/chymera/TC_norm.csv")
-    
+    #BEGI SEMS
+    SEM_timecourse_normed = all_timecourses.groupby(level=(0,1)).aggregate(sem)
     SEM_timecourse_plot = SEM_timecourse_normed.groupby(level=0).apply(downsample, sample=4, group='measurement')
     ###END SEMS
 
@@ -124,8 +111,8 @@ def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "
         ax1.axvline(rt[(rt["difficulty"] == "easy") | (rt["difficulty"] == "hard")]["RT"].mean(), linewidth=0.3, color='g')
     if "fix" in show:
         if make_sem:
-            ax1.fill_between(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]+SEM_timecourse_plot.ix["fix"]["Pupil"]/2), np.array(timecourse_plot.ix["fix"]["Pupil"]-SEM_timecourse_plot.ix["fix"]["Pupil"]/2), facecolor="0.8", edgecolor="none", alpha=0.2, zorder=0)
-        ax1.plot(np.array(timecourse_plot.ix["fix"]["Time"]), np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8",zorder=2)
+            ax1.fill_between(np.array(timecourse_plot.ix["easy"]["Time"]+timecourse_plot.ix["easy"]["Time"])/2, np.array(timecourse_plot.ix["fix"]["Pupil"]+SEM_timecourse_plot.ix["fix"]["Pupil"]/2), np.array(timecourse_plot.ix["fix"]["Pupil"]-SEM_timecourse_plot.ix["fix"]["Pupil"]/2), facecolor="0.8", edgecolor="none", alpha=0.2, zorder=0)
+        ax1.plot(np.array(timecourse_plot.ix["easy"]["Time"]+timecourse_plot.ix["easy"]["Time"])/2, np.array(timecourse_plot.ix["fix"]["Pupil"]), color="0.8",zorder=2)
         fix = Rectangle((0, 0), 1, 1, color="0.8")
         plotted.append(fix)
         plotted_names.append("Fixation")
@@ -191,15 +178,15 @@ def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "
     legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='9'))
     #END PLOTTING
     
-    return timecourse_normed
+    return all_timecourses
 
-def discrete_time(make_tight=True, show=""):
+def discrete_time(make_tight=True, show="", sample_size=40):
     df = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
     df["Time"] = df["Time"]/1000 #make seconds (from milliseconds)
    
     discretize = {0:"S01", 1:"S02", 2:"S03", 3:"S04", 4:"S05", 5:"S06", 6:"S07", 7:"S08", 8:"S09", 9:"S10", 10:"S11", 11:"S12", 12:"S13", 13:"S14", 14:"S15", 15:"S16", 16:"S17", 17:"S18", 18:"S19", 19:"S20"}
     
-    df = df.groupby(level=[0,1]).apply(downsample, sample=41, group='measurement')
+    df = df.groupby(level=[0,1]).apply(downsample, sample=sample_size+1, group='measurement')
     df.reset_index(inplace=True)
 
     #fixation has a jitter and building a mean gives smaller time values for the last time points:
@@ -239,13 +226,25 @@ def discrete_time(make_tight=True, show=""):
         plotted.append(hard)
         plotted_names.append("Hard Trials")
     if "happy" in show:
-        happy = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), np.array(timecourse_normed.ix["happy"]["Pupil"]), color='g')
+        ax1.plot(pos_ids, np.array(df_means.ix["happy"]["Pupil"]), "^-", markeredgecolor="none", linewidth=0.2, color='g')
+        happy = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(happy)
+        plotted_names.append("Happy Trials")
     if "fearful" in show: 
-        fearful = ax1.plot(np.array(timecourse_normed.ix["fearful"]["Time"]), np.array(timecourse_normed.ix["fearful"]["Pupil"]), color='m')
+        ax1.plot(pos_ids, np.array(df_means.ix["fearful"]["Pupil"]), "v-", markeredgecolor="none", linewidth=0.2, color='m')
+        fearful = Rectangle((0, 0), 1, 1, color="m")
+        plotted.append(fearful)
+        plotted_names.append("Fearful Trials")
     if "emotion" in show:
-        emotion = ax1.plot(np.array(timecourse_normed.ix["happy"]["Time"]), (np.array(timecourse_normed.ix["happy"]["Pupil"])+np.array(timecourse_normed.ix["fearful"]["Pupil"]))/2, color='g')
+        ax1.plot(pos_ids, (np.array(df_means.ix["happy"]["Pupil"])+np.array(df_means.ix["fearful"]["Pupil"]))/2, "^-", markeredgecolor="none", linewidth=0.2, color='g')
+        emotion = Rectangle((0, 0), 1, 1, color="g")
+        plotted.append(emotion)
+        plotted_names.append("Emotion Trials")
     if "scrambled" in show:
-        scrambled = ax1.plot(np.array(timecourse_normed.ix["scrambled"]["Time"]), np.array(timecourse_normed.ix["scrambled"]["Pupil"]), color='m')
+        ax1.plot(pos_ids, np.array(df_means.ix["scrambled"]["Pupil"]), "v-", markeredgecolor="none", linewidth=0.2, color='m')
+        scrambled = Rectangle((0, 0), 1, 1, color="m")
+        plotted.append(scrambled)
+        plotted_names.append("Scrambled Trials")
     
     ax1.set_xticks(pos_ids)
     ax1.set_xticklabels(ids,fontsize=9) # add rotation=30 if things get too crowded
@@ -257,14 +256,10 @@ def discrete_time(make_tight=True, show=""):
     legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
     #END PLOTTING
     
-    print ttest_rel(np.array(df[(df["dTime"]=="S6") & (df["CoI"]=="easy")]["Pupil"]),np.array(df[(df["dTime"]=="S6") & (df["CoI"]=="hard")]["Pupil"]))
-    
-    #~ print ttest_rel(np.array(df_means.ix["easy"]["Pupil"]))
-    
-    df.to_csv("/home/chymera/dTC.csv")
+    #~ df.to_csv("/home/chymera/dTC.csv")
     return df
 
 if __name__ == '__main__':
-    #~ main(make="time_course",show=["fix", "all", "rt_all"])
-    main(make="regressor")
+    main(make="time_course",show=["fearful", "happy", "rt_f", "rt_h"])
+    #~ discrete_time(show=["emotion","scrambled"], sample_size=25)
     show()

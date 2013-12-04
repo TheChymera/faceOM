@@ -92,7 +92,6 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		data_lefile['Trial'] = data_lefile['Trial'] - data_lefile['Trial'].ix[0] #trial number relative to first remaining trial
 		data_lefile['Time'] = (data_lefile['Time'] - data_lefile['Time'].ix[0])/1000 #time relative to first remaining time point; turn time to milliseconds
 		#END CUTOFF AT 'pulse_start'
-		
 		if make_categories:
 			new_category_names = set([new_cat[0] for new_cat in make_categories])
 			for new_category_name in new_category_names:
@@ -117,7 +116,6 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		data_lefile['measurement'] = grouped.apply(lambda x: pd.Series(np.arange(len(x)), x.index))
 		data_lefile.set_index(['Trial', 'measurement'], inplace=True)
 		#~ #MAKE MULTIINDEX
-		#~ print data_lefile.xs(320, level=1)
 		
 		if make == 'timecourse':
 			groups_all = []
