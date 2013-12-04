@@ -7,21 +7,20 @@ close all
 
 list_faceOM;
 
-
 % loop over subjects in list
 for s=1:length(list)
     
     subject = list{s};
-    newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/faceOM/'];
+    newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/conditions/'];
  
     
-    for i=1:515
+    for i=1:520
         array_scan{i} =  ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/swa' subject '_ep2d_faceOM.nii,' num2str(i)]; 
     end
     %define onset file
     onset_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/onsets/' subject '-faceOM_onset.mat'];
     %define movement regressor file
-    movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/chr_rp_a' subject '_ep2d_faceOM.txt'];
+    movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/rp_a' subject '_ep2d_faceOM.txt'];
     %starts spm
     spm('defaults', 'FMRI');
 
@@ -93,15 +92,11 @@ matlabbatch{3}.spm.stats.con.consess{8}.tcon.name = 'em40 > em100';
 matlabbatch{3}.spm.stats.con.consess{8}.tcon.convec = [-1 0 0 -1 0 0 1 0 0 1 0 0 0 0 0 0 0 0];
 matlabbatch{3}.spm.stats.con.consess{8}.tcon.sessrep = 'none';
 
-matlabbatch{3}.spm.stats.con.consess{9}.tcon.name = 'Pupil';
-matlabbatch{3}.spm.stats.con.consess{9}.tcon.convec = [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1];
-matlabbatch{3}.spm.stats.con.consess{9}.tcon.sessrep = 'none';
-
-matlabbatch{3}.spm.stats.con.consess{10}.fcon.name = 'alles';
-matlabbatch{3}.spm.stats.con.consess{10}.fcon.convec = {
+matlabbatch{3}.spm.stats.con.consess{9}.fcon.name = 'alles';
+matlabbatch{3}.spm.stats.con.consess{9}.fcon.convec = {
                                                        eye(25)
                                                        }';
-matlabbatch{3}.spm.stats.con.consess{10}.fcon.sessrep = 'none';
+matlabbatch{3}.spm.stats.con.consess{9}.fcon.sessrep = 'none';
 matlabbatch{3}.spm.stats.con.delete = 0;
 
 

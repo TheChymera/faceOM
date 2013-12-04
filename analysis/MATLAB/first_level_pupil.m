@@ -1,27 +1,50 @@
+function first_level_pupil(type)
 % 1st level batch for Trust Game, Trustee B, from Alena
 
-clear all
-close all
+%~clear all
+%~close all
 % List of subjects
 
 
 list_faceOM;
 
+%either simple, hdr, diff, or diff_hdr
+%~type = 'simple' 
 
 % loop over subjects in list
 for s=1:length(list)
     
     subject = list{s};
-    newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/pupil/'];
  
+    if strcmp(type,'simple') || strcmp(type,'hdr')
+        numTR = 515;
+    elseif strcmp(type,'diff') || strcmp(type,'diff_hdr')
+        numTR = 515;
+    end
+        
+    if strcmp(type,'simple')
+        newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/pupil/'];
+        movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/chr_rp_a' subject '_ep2d_faceOM.txt'];
+        contrast_name = 'pupil+';
+    elseif strcmp(type,'hdr')
+        newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/pupil_hdr/'];
+        movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/HDR_chr_rp_a' subject '_ep2d_faceOM.txt'];
+        contrast_name = 'hdr_pupil+';
+    elseif strcmp(type,'diff')
+        newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/pupil_der/'];
+        movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/diff_chr_rp_a' subject '_ep2d_faceOM.txt'];
+        contrast_name = 'diff_pupil+';
+    elseif strcmp(type,'diff_hdr')
+        newFolder = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/results/pupil_der_hdr/'];
+        movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/diff_HDR_chr_rp_a' subject '_ep2d_faceOM.txt'];
+        contrast_name = 'diff_hdr_pupil+';
+    end
     
-    for i=1:515
+    for i=1:numTR
         array_scan{i} =  ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/swa' subject '_ep2d_faceOM.nii,' num2str(i)]; 
     end
     %define onset file
-    onset_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/onsets/' subject '-faceOM_onset.mat'];
-    %define movement regressor file
-    movement_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/epi/faceOM/chr_rp_a' subject '_ep2d_faceOM.txt'];
+    %~onset_file = ['/home/chymera/data/faceOM/fmri/first_level/' subject '/onsets/' subject '-faceOM_onset.mat'];
     %starts spm
     spm('defaults', 'FMRI');
 
@@ -67,13 +90,9 @@ matlabbatch{3}.spm.stats.con.spmmat(1).sname = 'Model estimation: SPM.mat File';
 matlabbatch{3}.spm.stats.con.spmmat(1).src_exbranch = substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1});
 matlabbatch{3}.spm.stats.con.spmmat(1).src_output = substruct('.','spmmat');
 
-matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'pupil+';
+matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = contrast_name;
 matlabbatch{3}.spm.stats.con.consess{1}.tcon.convec = [0 0 0 0 0 0 1];
 matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'none';
-
-%~matlabbatch{3}.spm.stats.con.consess{2}.fcon.name = 'alles';
-%~matlabbatch{3}.spm.stats.con.consess{2}.fcon.convec = {eye(8)};
-%~matlabbatch{3}.spm.stats.con.consess{2}.fcon.sessrep = 'none';
 
 matlabbatch{3}.spm.stats.con.delete = 0;
 
