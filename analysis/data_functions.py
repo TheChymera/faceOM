@@ -84,7 +84,7 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 			
 			else:
 				data_lefile_single = data_lefile_single.ix[:,1]
-				data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'_new.csv', index=False,  header=False, index_label=None)
+				data_lefile_single.to_csv(regressor_path+lefile.split('_')[0]+'.csv', index=False,  header=False, index_label=None)
 			
 			continue
 		
