@@ -48,11 +48,11 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
 	errorbar(pos_ids+(width*1.5), data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")].groupby(level=0)['RT'].mean(), yerr=data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")].groupby(level=0)['RT'].aggregate(sem), ecolor=ecolor, elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
 
     #below this: total graphs
+    plt.bar(pos_ids[-1]+1-width, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='m', alpha=0.7, zorder = 1, linewidth=0)
+    plt.bar(pos_ids[-1]+1, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='m', alpha=0.4, zorder = 1, linewidth=0)
+    plt.bar(pos_ids[-1]+1+width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='g', alpha=0.7, zorder = 1, linewidth=0)
+    plt.bar(pos_ids[-1]+1+2*width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='g', alpha=0.4, zorder = 1, linewidth=0)
     if total == 'all':
-	plt.bar(pos_ids[-1]+1-width, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='m', alpha=0.7, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='m', alpha=0.4, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1+width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='g', alpha=0.7, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1+2*width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='g', alpha=0.4, zorder = 1, linewidth=0)
 	if make_std:
 	    errorbar(pos_ids[-1]+1-(width/2), data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), yerr=np.std(data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT']), ecolor=str(float(ecolor)+0.25), elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
 	    errorbar(pos_ids[-1]+1+(width/2), data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), yerr=np.std(data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT']), ecolor=str(float(ecolor)+0.25), elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
@@ -64,10 +64,6 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
 	    errorbar(pos_ids[-1]+1+(width*1.5), data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), yerr=sem(data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "easy")]['RT']), ecolor=ecolor, elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
 	    errorbar(pos_ids[-1]+1+(width*2.5), data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), yerr=sem(data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")]['RT']), ecolor=ecolor, elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
     elif total == 'means':
-	plt.bar(pos_ids[-1]+1-width, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='m', alpha=0.7, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1, data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='m', alpha=0.4, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1+width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), width ,color='g', alpha=0.7, zorder = 1, linewidth=0)
-	plt.bar(pos_ids[-1]+1+2*width, data_all[(data_all['emotion'] == "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), width ,color='g', alpha=0.4, zorder = 1, linewidth=0)
 	if make_std:
 	    errorbar(pos_ids[-1]+1-(width/2), data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")]['RT'].mean(), yerr=np.std(data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "easy")].groupby(level=0)['RT'].mean()), ecolor=str(float(ecolor)+0.25), elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
 	    errorbar(pos_ids[-1]+1+(width/2), data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")]['RT'].mean(), yerr=np.std(data_all[(data_all['emotion'] != "scrambled") & (data_all['difficulty'] == "hard")].groupby(level=0)['RT'].mean()), ecolor=str(float(ecolor)+0.25), elinewidth=elinewidth, capsize=0, linestyle='None', zorder = 2)
