@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 __author__ = 'Horea Christian'
 
-def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', diff=False, savefile='', force_new=False):
+def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='', diff=False, savefile='', baseline ="", force_new=False):
 	from os import path
 	import sys
 	import pandas as pd
@@ -135,6 +135,9 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 		else:
 			print 'Please specify the "make" argumant as either "timecourse" or an integer.'
 	
+		if baseline == "participant":
+			baseline_mean = data_lefile.ix["fix"]["Pupil"].mean() #baseline (fixcross) mean
+			data_lefile["Pupil"] = data_lefile["Pupil"]/baseline_mean
 		#ADD ID
 		data_lefile['ID']=lefile.split('_')[0]
 		data_lefile = data_lefile.set_index(['ID'], append=True, drop=True)
@@ -145,6 +148,10 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 	if make == "timecourse":
 		data_all = pd.concat(data_all)
 		data_all.reorder_levels(['ID','CoI','measurement'])
+
+		if baseline == "global":
+		    baseline_mean = data_all.groupby(level=1).mean().ix["fix"]["Pupil"].mean() #baseline (fixcross) mean
+		    data_all["Pupil"] = data_all["Pupil"]/baseline_mean
 
 		if savefile:
 			data_all.to_csv(preprocessed_file)
