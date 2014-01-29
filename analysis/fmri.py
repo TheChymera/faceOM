@@ -222,7 +222,7 @@ the output fields of the ``datasource`` node in the pipeline.
 """
 
 # Specify the location of the data downloaded from http://www.fil.ion.ucl.ac.uk/spm/data/face_rep/face_rep_SPM5.html
-data_dir = os.path.abspath('spm_face_data')
+data_dir = os.path.abspath("/home/chymera/data/famous_faces")
 # Specify the subject directories
 subject_list = ['M03953']
 # Map field names to individual subject runs.
@@ -257,7 +257,7 @@ datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'],
 datasource.inputs.base_directory = data_dir
 datasource.inputs.template = '%s/s%s_%04d%s.img'
 datasource.inputs.template_args = info
-
+datasource.inputs.sort_filelist = True
 
 
 """
@@ -329,7 +329,7 @@ slice_timingref.num_slices = num_slices
 slice_timingref.time_repetition = TR
 slice_timingref.time_acquisition = TR - TR/float(num_slices)
 slice_timingref.slice_order = range(num_slices,0,-1)
-slice_timingref.ref_slice = num_slices/2
+slice_timingref.ref_slice = int(num_slices/2)
 
 l1pipeline.inputs.preproc.smooth.fwhm = [8, 8, 8]
 
