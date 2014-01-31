@@ -51,7 +51,7 @@ def corr(source=False, make_tight=True):
     
     return [list(pearson), m, c]
     
-def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "scrambled", "rt_em", "rt_sc"], sample_by=4):
+def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "scrambled", "rt_em", "rt_sc"], sample_by=4, fontscale=1):
     rt = get_rt_data(make_categories=categories)
     all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', baseline="participant", force_new=False)
     all_timecourses["Time"] = all_timecourses["Time"]/1000 #make seconds (from milliseconds)
@@ -161,15 +161,15 @@ def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "
     if "rt_all" in show:
         ax1.axvline(rt[(rt["difficulty"] == "easy") | (rt["difficulty"] == "hard")]["RT"].mean(), linewidth=0.3, color='g', zorder=1)
 
-    ax1.tick_params(axis='both', labelsize=8)
-    ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
-    ax1.set_xlabel('Time [s]', fontsize=11)
-    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='9'))
+    ax1.tick_params(axis='both', labelsize=8*fontscale)
+    ax1.set_ylabel('Pupil Area Ratio', fontsize=11*fontscale)
+    ax1.set_xlabel('Time [s]', fontsize=11*fontscale)
+    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size=str(9*fontscale)))
     #END PLOTTING
     
     return all_timecourses
 
-def discrete_time(make_tight=True, show="", sample_size=40):
+def discrete_time(make_tight=True, show="", sample_size=40, fontscale=1):
     df = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', baseline="participant", force_new=False)
     df["Time"] = df["Time"]/1000 #make seconds (from milliseconds)
    
@@ -231,13 +231,13 @@ def discrete_time(make_tight=True, show="", sample_size=40):
         plotted_names.append("Scrambled Trials")
     
     ax1.set_xticks(pos_ids)
-    ax1.set_xticklabels(ids,fontsize=9) # add rotation=30 if things get too crowded
+    ax1.set_xticklabels(ids,fontsize=9*fontscale) # add rotation=30 if things get too crowded
     
-    ax1.set_ylabel('Pupil Area Ratio', fontsize=11)
-    ax1.set_xlabel('Time Series Sextiles [66 ms]', fontsize=11)
+    ax1.set_ylabel('Pupil Area Ratio', fontsize=11*fontscale)
+    ax1.set_xlabel('Time Series Sextiles [66 ms]', fontsize=11*fontscale)
     axis.Axis.zoom(ax1.xaxis, -0.6) # sets x margins further apart from the content proportional to its length
     axis.Axis.zoom(ax1.yaxis, -0.4) # sets x margins further apart from the content proportional to its length
-    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='5'))
+    legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size=str(5*fontscale)))
     #END PLOTTING
     
     #~ df.to_csv("/home/chymera/dTC.csv")

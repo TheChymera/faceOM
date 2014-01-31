@@ -19,7 +19,7 @@ categories_of_interest = [
     ['CoI', 'scrambling-hard', 'cell22rand']
     ]
 
-def main(make=False, source=False, make_tight=True, compare="difficulty", show="", make_std=True, make_sem=True, ecolor='0.3', elinewidth=2, total="means", make_scrambled_yn=False, per_participant_error=False):
+def main(make=False, source=False, make_tight=True, compare="difficulty", show="", make_std=True, make_sem=True, ecolor='0.3', elinewidth=2, total="means", make_scrambled_yn=False, per_participant_error=False, fontscale=1):
     data_all = get_et_data(make='timecourse', make_categories=categories_of_interest, savefile='time_series_CoI.csv', baseline="global", force_new=False)
     data_all["Time"] = data_all["Time"]/1000 #make seconds (from milliseconds)
     
@@ -75,17 +75,17 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     #~ 
     ids=ids+['      ALL']
     pos_ids = np.arange(len(ids))
-    ax.set_ylabel(r'$\mathsf{\overline{RT}}$ [s]', fontsize=11)
-    ax.set_xlabel('Participant', fontsize=11)
+    ax.set_ylabel('Pupil Area Ratio', fontsize=11*fontscale)
+    ax.set_xlabel('Participant', fontsize=11*fontscale)
     ax.set_xticks(pos_ids)
-    ax.set_xticklabels(ids,fontsize=7.5) # add rotation=30 if things get too crowded
+    ax.set_xticklabels(ids,fontsize=7.5*fontscale,rotation=30) # add rotation=30 if things get too crowded
     for tick in ax.axes.get_xticklines():
 	    tick.set_visible(False)
     ax.set_xlim(0, pos_ids[-1]+width*1) # before scaling to add padding in front of zero
     axis.Axis.zoom(ax.xaxis, -0.8) # sets x margins further apart from the content proportional to its length
     axis.Axis.zoom(ax.yaxis, -0.5) # sets y margins further apart from the content proportional to its length
     ax.set_ylim(bottom=0) # after scaling to disregard padding unerneath zero.
-    legend((fix, plot_em_easy, plot_em_hard, plot_sc_easy, plot_sc_hard),("Fixation",'Strong Emotion','Weak Emotion', "Easy Scrambling", "Hard Scrambling"),loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=5, fancybox=False, shadow=False, prop=FontProperties(size='7'))
+    legend((fix, plot_em_easy, plot_em_hard, plot_sc_easy, plot_sc_hard),("Fixation",'Strong Emotion','Weak Emotion', "Easy Scrambling", "Hard Scrambling"),loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size=str(8*fontscale)))
     data_all.to_csv("/home/chymera/RT.csv")
     
     return data_all
