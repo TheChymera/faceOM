@@ -111,11 +111,12 @@ def get_et_data(source=False, make='timecourse', pre_cutoff=0, make_categories='
 						if criterion in trial[1]:
 							data_lefile.ix[(data_lefile['Trial']==trial[0]), category[0]] = category[1]
 		
-		#~ #MAKE MULTIINDEX
-		grouped = data_lefile.reset_index().groupby('Trial')
-		data_lefile['measurement'] = grouped.apply(lambda x: pd.Series(np.arange(len(x)), x.index))
+		#MAKE MULTIINDEX
+		grouped = data_lefile.set_index(['Trial'])
+		#measurement is the ordinal number of a capture frame within a trial:
+		data_lefile['measurement'] = grouped.groupby(level=0).cumcount().tolist()
 		data_lefile.set_index(['Trial', 'measurement'], inplace=True)
-		#~ #MAKE MULTIINDEX
+		#END MAKE MULTIINDEX
 		
 		if make == 'timecourse':
 			groups_all = []
@@ -207,10 +208,6 @@ def sequence_check(source=False):
 		
 		seq_file.to_csv(fmri_logfile+"/sequence-check/seq-chk_"+fmri)
 		
-		#~ for i in np.arange(len(seq_file)):
-			#~ if seq_file.ix[i]['fMRI'] not in seq_file.ix[i]['ET']:
-				#~ print fmri, i, seq_file.ix[i]['fMRI'], seq_file.ix[i]['ET']
-
 def get_rt_data(source=False, make_categories=False, no_response="", make_scrambled_yn=False):
 	from os import path
 	import sys
@@ -303,7 +300,9 @@ def get_rt_data(source=False, make_categories=False, no_response="", make_scramb
 def downsample(x, sample, group=''):
 	x = x.reset_index()
 	if group:
-		x = x.groupby(x[group].div(sample)).mean()
+		# bins assigns the raw capture frames to downsampled ordinal bins:
+		bins = x[group].div(sample).apply(lambda x: int(x))
+		x = x.groupby(bins).mean()
 		del x[group]
 	else:
 		x = x.groupby(x.index/sample).mean()
