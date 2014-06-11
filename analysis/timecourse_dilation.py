@@ -21,8 +21,8 @@ categories = [
     ['fixation', 'fix', 'fix']
 	]
 
-def corr(source=False, make_tight=True):
-    all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=False)
+def corr(source=False, make_tight=True, force_new=False):
+    all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', force_new=force_new)
     timecourse_means = all_timecourses.groupby(level=(1,2)).mean()
     
     pearson = pearsonr(timecourse_means["L Dia X [px]"], timecourse_means["L Dia Y [px]"])
@@ -51,9 +51,9 @@ def corr(source=False, make_tight=True):
     
     return [list(pearson), m, c]
     
-def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "scrambled", "rt_em", "rt_sc"], sample_by=4, fontscale=1):
+def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "scrambled", "rt_em", "rt_sc"], sample_by=4, fontscale=1, force_new=False):
     rt = get_rt_data(make_categories=categories)
-    all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', baseline="participant", force_new=False)
+    all_timecourses = get_et_data(make='timecourse', make_categories=categories, savefile='time_series.csv', baseline="participant", force_new=force_new)
     all_timecourses["Time"] = all_timecourses["Time"]/1000 #make seconds (from milliseconds)
     all_timecourses.to_csv("/home/chymera/TC_all.csv")
 
@@ -61,10 +61,9 @@ def time_course(source=False, make_tight=True, make_sem=True, show=["emotion", "
     all_timecourses = all_timecourses.set_index(["CoI","measurement"], append=True, drop=True)
     all_timecourses = all_timecourses.reset_index(level=0,drop=True)
     
-    timecourse_plot = all_timecourses.groupby(level=(0,1)).mean() # explicitly create means, technically this line is useless, but I don't trust the next one :D 
-    timecourse_plot = timecourse_plot.groupby(level=0).apply(downsample, sample=sample_by, group='measurement') # also creates means ;)
+    #downsamples the timecourse:
+    timecourse_plot = all_timecourses.groupby(level=0).apply(downsample, sample=sample_by, group='measurement')
     
-
     #BEGI SEMS
     SEM_timecourse_normed = all_timecourses.groupby(level=(0,1)).aggregate(sem)
     SEM_timecourse_plot = SEM_timecourse_normed.groupby(level=0).apply(downsample, sample=sample_by, group='measurement')
@@ -240,7 +239,6 @@ def discrete_time(make_tight=True, show="", sample_size=40, fontscale=1):
     legend((plotted),(plotted_names),loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size=str(5*fontscale)))
     #END PLOTTING
     
-    #~ df.to_csv("/home/chymera/dTC.csv")
     return df
 
 if __name__ == '__main__':
