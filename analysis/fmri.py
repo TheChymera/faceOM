@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division
-
-#!/usr/bin/env python
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
@@ -48,8 +45,8 @@ mlab.MatlabCommand.set_default_matlab_cmd("matlab -nodesktop -nosplash")
 
 """
 Setting up workflows
---------------------
 
+--------------------
 In this tutorial we will be setting up a hierarchical workflow for spm
 analysis. It one is slightly different then the one used in spm_tutorial2.
 
@@ -83,6 +80,7 @@ coregister.inputs.jobtype = 'estimate'
 
 
 segment = pe.Node(interface=spm.Segment(), name="segment")
+segment.inputs.save_bias_corrected = True
 
 """Uncomment the following line for faster execution
 """
@@ -130,8 +128,8 @@ preproc.connect([(realign,coregister,[('mean_image', 'target')]),
                  (coregister, segment,[('coregistered_source','data')]),
                  (segment, normalize_func, [('transformation_mat','parameter_file')]),
                  (segment, normalize_struc, [('transformation_mat','parameter_file'),
-                                             ('modulated_input_image', 'apply_to_files'),
-                                             (('modulated_input_image', get_vox_dims), 'write_voxel_sizes')]),
+                                             ('bias_corrected_image', 'apply_to_files'),
+                                             (('bias_corrected_image', get_vox_dims), 'write_voxel_sizes')]),
                  (realign, slice_timing, [('realigned_files', 'in_files')]),
                  (slice_timing, normalize_func, [('timecorrected_files', 'apply_to_files'),
                                             (('timecorrected_files', get_vox_dims), 'write_voxel_sizes')]),
@@ -222,7 +220,7 @@ the output fields of the ``datasource`` node in the pipeline.
 """
 
 # Specify the location of the data downloaded from http://www.fil.ion.ucl.ac.uk/spm/data/face_rep/face_rep_SPM5.html
-data_dir = os.path.abspath("/home/chymera/data/famous_faces")
+data_dir = os.path.abspath('/home/chymera/data/nipy/famous_faces')
 # Specify the subject directories
 subject_list = ['M03953']
 # Map field names to individual subject runs.

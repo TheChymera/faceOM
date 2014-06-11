@@ -14,4 +14,4 @@ We would like to give thanks to the clinical psychology department around Prof. 
 * **[MATLAB](https://en.wikipedia.org/wiki/Matlab)** - *proprietary!*
 
 Released under the GPLv3 license.
-Project led by Horea Christian (address all correspondence to: h.chr@mail.ru)
+Project led by Horea Christian (address all e-mail correspondence to: h.chr@mail.ru)
