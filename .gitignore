@@ -23,6 +23,9 @@ Thumbs.db
 *.pyc
 *.pyo
 
+# IPython
+Untitled*.ipynb
+
 # Data traces:
 output/*
 results/*
