@@ -109,7 +109,3 @@ def main(make=False, source=False, make_tight=True, conditions=conditions, show=
     legend((plot_em_easy, plot_em_hard, plot_sc_easy, plot_sc_hard),('Strong Emotion','Weak Emotion', "Easy Scrambling", "Hard Scrambling"),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=4, fancybox=False, shadow=False,prop= FontProperties(size=str(8*fontscale)))
 
     return total_errors
-
-if __name__ == '__main__':
-	main(source='local')
-	show()

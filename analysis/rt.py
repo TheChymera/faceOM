@@ -93,9 +93,3 @@ def main(make=False, source=False, make_tight=True, compare="difficulty", show="
     ax.set_ylim(bottom=0) # after scaling to disregard padding unerneath zero.
     legend((plot_em_easy, plot_em_hard, plot_sc_easy, plot_sc_hard),('Strong Emotion','Weak Emotion', "Easy Scrambling", "Hard Scrambling"),loc='upper center', bbox_to_anchor=(0.5, 1.065), ncol=4, fancybox=False, shadow=False, prop=FontProperties(size=str(8*fontscale)))
     return data_all
-
-
-if __name__ == '__main__':
-    main()
-    show()
-
