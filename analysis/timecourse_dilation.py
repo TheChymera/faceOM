@@ -47,7 +47,7 @@ def corr(source=False, make_tight=True, force_new=False):
     ax1.set_xlabel('X-axis Pupil Diameter [px]', fontsize=9)
     ax1.set_ylim(bottom=10) 
     ax1.set_xlim(left=10)
-    legend((all_points, participant_means, regression),('Raw','Means', 'Regression'),loc='upper center', bbox_to_anchor=(0.5, 1.038), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='8'))
+    legend((all_points, participant_means, regression),('Raw','Per-(Time, Condition) Particiant Means', 'Regression'),loc='upper center', bbox_to_anchor=(0.5, 1.038), ncol=3, fancybox=False, shadow=False, prop=FontProperties(size='7'))
     
     return [list(pearson), m, c]
     
@@ -240,7 +240,3 @@ def discrete_time(make_tight=True, show="", sample_size=40, fontscale=1):
     #END PLOTTING
     
     return df
-
-if __name__ == '__main__':
-    time_course()
-    show()
